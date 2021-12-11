@@ -1,0 +1,8 @@
+prefix=/home/qingchen/catkin_ws/src/devel
+
+Name: crazyflie_tools
+Description: Description of crazyflie_tools
+Version: 0.0.1
+Cflags: 
+Libs: -L/home/qingchen/catkin_ws/src/devel/lib 
+Requires: crazyflie_cpp

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!--master auto="start"/>
+  <param name="/use_sim_time" value="false"/-->
+
+  <node name="CentralizedNode" pkg="voronoi_draw" type="CentralizedNode.py" respawn="false" output="screen">
+    <param name="port_param" type="int" value="20003" />
+    <param name="ip_param" value="192.168.1.113" />
+  </node>
+
+
+  <!-- <node pkg="rosbag" type="play" name="player" output="screen" args="- -clock $(find voronoi_draw)/../../record/coverage.bag"/> Delete the space at - - clock-->
+
+  
+  <node name="image_view_1" pkg="image_view" type="video_recorder" respawn="false">
+    <remap from="image" to="/img/paint"/>
+    <param name="filename" value="$(find voronoi_draw)/voronoi.avi" />
+    <param name="fps" type="int" value="18" />
+  </node>
+
+  <!--node name="image_view_2" pkg="image_view" type="image_view" respawn="false">
+    <remap from="image" to="/camera_out/image_raw"/>
+    <param name="filename" value="$(find voronoi_draw)/vehicle.avi" />
+  </node-->
+</launch>

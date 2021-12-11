@@ -1,0 +1,8 @@
+prefix=/home/qingchen/catkin_ws/src/coverage/devel
+
+Name: tip
+Description: Description of tip
+Version: 0.0.0
+Cflags: -I/home/qingchen/catkin_ws/src/coverage/devel/include
+Libs: -L/home/qingchen/catkin_ws/src/coverage/devel/lib 
+Requires: qualisys roscpp message_runtime

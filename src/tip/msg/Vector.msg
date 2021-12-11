@@ -1,0 +1,13 @@
+Header header
+int64 x1
+int64 y1
+int64 x2
+int64 y2
+int64 x3
+int64 y3
+int64 x4
+int64 y4
+int64 x5
+int64 y5
+int64 x6
+int64 y6

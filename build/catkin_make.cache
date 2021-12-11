@@ -1,0 +1,2 @@
+beginner_tutorials:coverage:crazyflie_ros/crazyflie:crazyflie_ros/crazyflie_controller:crazyflie_ros/crazyflie_cpp:crazyflie_ros/crazyflie_demo:crazyflie_ros/crazyflie_description:crazyflie_ros/crazyflie_driver:crazyflie_ros/crazyflie_tools:qualisys:tip:usb_cam:video_stream_opencv-master:voronoi_draw:vrpn_ros
+-DCATKIN_DEVEL_PREFIX=/home/qingchen/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/qingchen/catkin_ws/install -G Unix Makefiles

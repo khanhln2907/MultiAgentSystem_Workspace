@@ -1,0 +1,8 @@
+prefix=/home/qingchen/catkin_ws/src/coverage/devel
+
+Name: qualisys
+Description: Description of qualisys
+Version: 0.0.1
+Cflags: -I/home/qingchen/catkin_ws/src/coverage/devel/include -I/usr/include
+Libs: -L/home/qingchen/catkin_ws/src/coverage/devel/lib -lyaml-cpp
+Requires: message_runtime geometry_msgs tf

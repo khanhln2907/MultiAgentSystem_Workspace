@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="respawn_flag" 	default="false"/>
+  <arg name="pub_tf" 		default="false"/>
+  <arg name="IP" 		default="192.168.147.1"/>
+  <arg name="port" 		default="22222"/>
+  <node pkg="qualisys"  type="qualisys_node" 
+    name="qualisys"   output="screen"
+    respawn="$(arg respawn_flag)">
+    <param name="server_address" value="$(arg IP)"/>
+    <param name="base_port" value="$(arg port)"/>
+    <param name="publish_tf" value="$(arg pub_tf)"/>
+  </node>
+</launch>
