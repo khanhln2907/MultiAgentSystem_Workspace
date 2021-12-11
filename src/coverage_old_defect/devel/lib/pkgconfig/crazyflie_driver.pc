@@ -1,8 +1,0 @@
-prefix=/home/qingchen/catkin_ws/src/coverage/devel
-
-Name: crazyflie_driver
-Description: Description of crazyflie_driver
-Version: 0.0.1
-Cflags: -I/home/qingchen/catkin_ws/src/coverage/devel/include
-Libs: -L/home/qingchen/catkin_ws/src/coverage/devel/lib 
-Requires: message_runtime std_msgs tf crazyflie_cpp
