@@ -106,8 +106,8 @@ if __name__ == '__main__':
 		# Execute if the central node is in operating state
 		if(centralCom.startFlag == True):
 			tic = time.time()
-			#centralCom.updateCoverage()
-			#centralCom.publishDebugInfo()
+			centralCom.updateCoverage()
+			centralCom.publishDebugInfo()
 			# Capture execution time
 			toc = time.time() - tic
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 					agent.VmX, agent.VmY,\
 					agent.TargetX, agent.TargetY,\
 					agent.angularVel, agent.testW,\
-					agent.lastVBLF // 100000, agent.dVBLF // 100000, \
+					agent.lastVBLF, agent.dVBLF, \
 					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
 				rospy.loginfo(str)
 				rospy.loginfo(centralCom.adjacentMat)

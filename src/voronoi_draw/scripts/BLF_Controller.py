@@ -54,17 +54,10 @@ class BLF_Controller:
 		self.PosY = np.float32(data.packet.AgentPosY)
 		self.Theta = np.float32(data.packet.AgentTheta)
 		
-		# These will be updated distributedlz if decentralized controller is used
-		#self.VmX = np.float32(data.packet.VirtualCenterX)
-		#self.VmY = np.float32(data.packet.VirtualCenterY)
-		#self.VBLF = np.float32(data.packet.V_BLF)
-		
 		# Update this internally for centralized controller
 		self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
 		
 	def updateBLFState(self, newCentroidX, newCentroidY):
-		newCentroidX = 1992
-		newCentroidY = 1500
 		self.TargetX = newCentroidX
 		self.TargetY = newCentroidY
 		posFilterThres = 0
@@ -111,7 +104,7 @@ class BLF_Controller:
 			self.bBnd[j,0] = round(self.bBnd[j,0])
 		#rospy.loginfo([self.ABnd, self.bBnd])
 
-	def controlBLF(self, neighborInfo):	
+	def controlBLF(self, dV):	
 		# Constant parameter =================================
 		# This should be initalised at the beginning, however config here for easy tuning
 		self.wThres = 127
@@ -120,8 +113,9 @@ class BLF_Controller:
 		self.wOrbit = 30
 		# Control output ====================================
 		# Controller selection
-		w = self.simpleController()
-		#w = self.__controlBLF(neighborInfo)
+		#w = self.simpleController()
+		#		w = self.__controlBLF(neighborInfo)
+		w = self.wOrbit + self.gain * np.sign(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta))
 
 		# Output cutoff
 		if(w > self.wThres):

@@ -77,6 +77,7 @@ def voronoi(pins,Abnd, bbnd):
 
 	#rospy.loginfo(vertexes)
 	centroid = []
+	partitionMass = []
 	for i in range(0,len(pnts)):
 		x = np.array([])
 		y = np.array([])
@@ -84,13 +85,11 @@ def voronoi(pins,Abnd, bbnd):
 		for j in range(0, len(thisVertex)):
 			x = np.append(x, thisVertex[j][0])
 			y = np.append(y, thisVertex[j][1])
-			rospy.loginfo("Vertexes %d", j)
-			rospy.loginfo([x, y])
-		[Cx, Cy] = VoronoiCenterMass(x, y)
+		[Cx, Cy, miV] = VoronoiCenterMass(x, y)
 		centroid.append([Cx, Cy])
+		partitionMass.append(miV)
 
-	#rospy.loginfo([pnts, vertexes, centroid])
-	return pnts, vertexes, centroid
+	return pnts, vertexes, centroid, partitionMass
 
 def VoronoiCenterMass(xRaw, yRaw):
 	x, y = sortPolygonVertexesClockwise(xRaw, yRaw)
@@ -98,7 +97,6 @@ def VoronoiCenterMass(xRaw, yRaw):
 	xShift = np.append(x[1:], x[0])
 	yShift = np.append(y[1:], y[0])
 	#rospy.loginfo([x, xShift, y, yShift])
-	#With A the area, calculated as
 	tmpSumX = 0
 	tmpSumY = 0
 	tmpSumA = 0
@@ -113,7 +111,7 @@ def VoronoiCenterMass(xRaw, yRaw):
 	#rospy.loginfo([x, y])
 	#rospy.loginfo("N: %d A: %f SX: %f SY: %f Cx: %f Cy: %f", n, tmpSumA, tmpSumX, tmpSumY, Cx, Cy)
 
-	return [Cx, Cy]
+	return [Cx, Cy, A]
 	
 
 def sortPolygonVertexesClockwise(x, y):
@@ -147,12 +145,14 @@ def sortPolygonVertexesClockwise(x, y):
 
 
 def getAdjacentList(Vertices, centroidArr):
-	#rospy.loginfo([Vertices, centroidArr])
 	nTotal = len(centroidArr)
 	adjMat = np.zeros((nTotal, nTotal))
+	vArr = [[None] * nTotal for i in range(nTotal)]
 	tmpCentroidArr = centroidArr
 	for thisAgent in range(nTotal):			# This agent
 		for nextAgent in range(thisAgent + 1, nTotal):		# Aother agent
+			
+			commonVertexes = []
 			isNeighBor = False
 			cnt = 0
 			# Set all of the current Agent
@@ -160,17 +160,21 @@ def getAdjacentList(Vertices, centroidArr):
 				# Compare with all vertexes of the next agent
 				for comparedVertex in Vertices[nextAgent]:
 					# Some tolerant in numeical error
-					if(abs(thisVertex[0]-comparedVertex[0])<0.5 and abs(thisVertex[1]-comparedVertex[1])<0.5):
+					if(abs(thisVertex[0]-comparedVertex[0])<0.05 and abs(thisVertex[1]-comparedVertex[1])<0.05):
 						cnt += 1
+						commonVertexes.append(comparedVertex)
 			
 			if(cnt == 2): # Perfect match
 				isNeighBor = True
 				adjMat[thisAgent][nextAgent] = 1
 				adjMat[nextAgent][thisAgent] = 1
-			"""
-			if(cnt >= 3):
-					rospy.logwarn("adjacentList Fault: id: %d vs %d", thisAgent, nextAgent)
-					rospy.logwarn(Vertices)
-			"""
-	return adjMat
+				vArr[thisAgent][nextAgent] = (commonVertexes)
+				vArr[nextAgent][thisAgent] = (commonVertexes)
+			elif (cnt == 0):
+				pass
+			else:
+				rospy.logwarn("adjacentList Fault: id: %d vs %d: %d", thisAgent, nextAgent, cnt)
+				rospy.logwarn(Vertices)
+				
+	return adjMat, vArr
 

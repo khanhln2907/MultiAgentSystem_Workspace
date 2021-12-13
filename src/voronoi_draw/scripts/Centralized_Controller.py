@@ -32,7 +32,8 @@ from voronoi_custom import getAdjacentList
 from tip.msg import UnicycleInfoMsg
 from tip.msg import ControlMsg
 from BLF_Controller import *
-
+from controlAlgo import *
+from VoronoiLib import *
 
 class Centralized_Controller:
 	def __init__(self):
@@ -64,6 +65,12 @@ class Centralized_Controller:
 		# Initialize the list of agents information with the desired settings
 		boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
 		[self.aMat, self.bVec] = getConvexBndMatrix(boundaries)
+		self.bndCoeff = np.zeros([len(self.bVec),3])
+		for j in range(len(self.bVec)):
+			self.bndCoeff[j,0] = self.aMat[j,0]
+			self.bndCoeff[j,1] = self.aMat[j,1]
+			self.bndCoeff[j,2] = self.bVec[j]
+		
 		for i in range(self._nAgent):
 			agentHandler = BLF_Controller()
 			agentHandler.begin(1, 2, 1, 2, boundaries)
@@ -145,9 +152,8 @@ class Centralized_Controller:
 		pntsArr = np.array(tmpTessel)
 		# Boundary lines of the coverage area. This is still hard coded until now
 		# Get the centroids and the vertices
-		[pntsIn , self.VoronoiVertices, centroidArr] = voronoi(pntsArr, self.aMat, self.bVec)
-		self.adjacentMat = getAdjacentList(self.VoronoiVertices, centroidArr)
-
+		[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pntsArr, self.aMat, self.bVec)
+		[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
 
 		# Return the adjacent matrix in relation to the order of centroid
 
@@ -168,26 +174,68 @@ class Centralized_Controller:
 		# Update the control input if everything is working fine	
 		else: 
 			# Update BLF State of all agent
-			for i in range(0, self._nAgent):
+			dVidziList = []
+			lapunovMat = [[None] for i in range(self._nAgent)]
+			controlParam = controlParameter()
+			controlParam.eps = 5
+			controlParam.gain = 3
+			controlParam.P = 3
+			controlParam.Q_2x2 = 5 * np.identity(2)
+			for agentID in range(0, self._nAgent):
+				myAgent = vorPrivateData()
+				myAgent.C = np.array(centroidArr[agentID])
+				myAgent.z = np.array([self._AgentList[agentID].VmX, self._AgentList[agentID].VmY])
+				myAgent.dCi_dzi = 0
+				dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
+				for neighborID in range(0, self._nAgent):
+					
+					if(self.adjacentMat[agentID][neighborID] == 1):
+						adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
+						dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
+													adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
+						myAgent.dCi_dzi += dCi_dzi_AdjacentJ
+						dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
+				
+				# Compute the Lyapunov feedback after having the adjacent information
+				#rospy.loginfo(dCi_dzj_list[agentID,:,:,:])
+				[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
+				dVidziList.append(dVidzi)
+				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
 				self._AgentList[i].updateBLFState(centroidArr[i][0], centroidArr[i][1])
 
 			# Compute the control output for all agents
-			for i in range(0, self._nAgent):
-				# Process the information of adjacent agent
-				# self._AgentList[i].verticesList = Vertices[i] # Might need this for integration
-				# ...
-				neighborInfo = []
-				fakeSum = 0
+			for agentID in range(0, self._nAgent):
+				dV = dVidziList[agentID]
 				for neighborID in range(0, self._nAgent):
-					if(self.adjacentMat[i][neighborID] == 1):
-						neighborInfo.append([self._AgentList[neighborID].ID, self._AgentList[neighborID].dVBLF])
-				[v, w] = self._AgentList[i].controlBLF(np.mat(neighborInfo))
+					if(self.adjacentMat[neighborID][agentID] == 1):
+						#rospy.loginfo(lapunovMat[neighborID][2][0][0])
+						dV += lapunovMat[neighborID][2][0][agentID]
+
+				[v, w] = self._AgentList[i].controlBLF(dV)
 				# Publish the message
 				msg = ControlMsg()
 				msg.ID = self._AgentList[i].ID
 				msg.translation = v
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
+
+
+			# Compute the control output for all agents
+			# for i in range(0, self._nAgent):
+			# 	# Process the information of adjacent agent
+			# 	# self._AgentList[i].verticesList = Vertices[i] # Might need this for integration
+			# 	# ...
+			# 	neighborInfo = []
+			# 	for neighborID in range(0, self._nAgent):
+			# 		if(self.adjacentMat[i][neighborID] == 1):
+			# 			neighborInfo.append([self._AgentList[neighborID].ID, self._AgentList[neighborID].dVBLF])
+			# 	[v, w] = self._AgentList[i].controlBLF(np.mat(neighborInfo))
+			# 	# Publish the message
+			# 	msg = ControlMsg()
+			# 	msg.ID = self._AgentList[i].ID
+			# 	msg.translation = v
+			# 	msg.rotation = w			
+			# 	self.controlInputPublisher.publish(msg)
 
 	def publishDebugInfo(self):
 		msg = CentralizedMsg()
