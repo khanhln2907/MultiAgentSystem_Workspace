@@ -156,7 +156,6 @@ class Centralized_Controller:
 		[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
 
 		# Return the adjacent matrix in relation to the order of centroid
-
 		# If the total amount of centroid returns is lower than the total amount of agents
 		# Mission must be terminated. Error detection
 		if(len(centroidArr) != self._nAgent):
@@ -201,20 +200,20 @@ class Centralized_Controller:
 				[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
 				dVidziList.append(dVidzi)
 				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
-				self._AgentList[i].updateBLFState(centroidArr[i][0], centroidArr[i][1])
 
 			# Compute the control output for all agents
 			for agentID in range(0, self._nAgent):
+				self._AgentList[agentID].updateBLFState(centroidArr[agentID][0], centroidArr[agentID][1])
 				dV = dVidziList[agentID]
 				for neighborID in range(0, self._nAgent):
 					if(self.adjacentMat[neighborID][agentID] == 1):
 						#rospy.loginfo(lapunovMat[neighborID][2][0][0])
 						dV += lapunovMat[neighborID][2][0][agentID]
 
-				[v, w] = self._AgentList[i].controlBLF(dV)
+				[v, w] = self._AgentList[agentID].controlBLF(dV)
 				# Publish the message
 				msg = ControlMsg()
-				msg.ID = self._AgentList[i].ID
+				msg.ID = self._AgentList[agentID].ID
 				msg.translation = v
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)

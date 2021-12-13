@@ -1,4 +1,6 @@
 *.avi
 *.vs
 local.txt
-
+*.bag
+*.pyc
+*.bag.*
