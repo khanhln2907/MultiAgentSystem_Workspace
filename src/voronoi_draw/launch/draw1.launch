@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!--master auto="start"/>
+  <param name="/use_sim_time" value="false"/-->
+
+  <node name="voronoi_draw" pkg="voronoi_draw" type="stream_voronoi.py" respawn="false" output="screen">
+    <remap from="/qualisys/Center" to="/qualisys/San"/>
+    <remap from="/vehicle/vt_ctr" to="/san/vt_ctr" />
+    <remap from="/vehicle/centroid" to="/san/centroid" />
+    <remap from="/jet1/vt_ctr" to="/liu/vt_ctr" />
+    <remap from="/jet2/vt_ctr" to="/qi/vt_ctr" />
+    <remap from="/jet3/vt_ctr" to="/wu/vt_ctr" />
+    <remap from="/vehicle/voronoi" to="/san/voronoi" />
+    <param name="port_param" type="int" value="20003" />
+    <param name="ip_param" value="192.168.1.113" />
+  </node>
+
+  
+  <node name="image_view_1" pkg="image_view" type="video_recorder" respawn="false">
+    <remap from="image" to="/img/paint"/>
+    <param name="filename" value="$(find voronoi_draw)/voronoi.avi" />
+    <param name="fps" type="int" value="18" />
+  </node>
+
+  <!--node name="image_view_2" pkg="image_view" type="image_view" respawn="false">
+    <remap from="image" to="/camera_out/image_raw"/>
+    <param name="filename" value="$(find voronoi_draw)/vehicle.avi" />
+  </node-->
+</launch>
