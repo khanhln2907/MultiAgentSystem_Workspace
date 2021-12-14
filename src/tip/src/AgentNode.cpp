@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
         // Get the summary report of the agent and publish it to another node
         BLF_CoverageMessage infoStruct = thisAgent.getPublishedInfo();
         dataTobeTransmitted = convertPublishCoverageMessage(infoStruct);
-        ROS_INFO("ID: %d| x: %.2f| y: %.2f| the: %.1f| VMx: %.2f| VMy: %.2f",
-        infoStruct.TransmitterID, infoStruct.AgentPose.x, infoStruct.AgentPose.y, infoStruct.AgentPose.theta, infoStruct.VirtualCenter.x, infoStruct.VirtualCenter.y);
+        //ROS_INFO("ID: %d| x: %.2f| y: %.2f| the: %.1f| VMx: %.2f| VMy: %.2f",
+        //infoStruct.TransmitterID, infoStruct.AgentPose.x, infoStruct.AgentPose.y, infoStruct.AgentPose.theta, infoStruct.VirtualCenter.x, infoStruct.VirtualCenter.y);
 
 
         coverageTopicPublisher.publish(dataTobeTransmitted);
@@ -256,7 +256,7 @@ void rosTopicCentralizedNodeListen(const tip::ControlMsg cmd){
 
         u[0] = tranVel;
         u[1] = angVel;
-        //ROS_INFO("ID: %d V: %.3f W: %.3f", rxID, tranVel, angVel);
+        ROS_INFO("ID: %d V: %.3f W: %.3f, %d", rxID, tranVel, angVel, EMERGENCY_STOP);
 
         int n;
         socklen_t len;

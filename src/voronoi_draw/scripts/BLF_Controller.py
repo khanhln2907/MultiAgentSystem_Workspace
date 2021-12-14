@@ -117,7 +117,7 @@ class BLF_Controller:
 		# This should be initalised at the beginning, however config here for easy tuning
 		self.wThres = 127
 		self.vConst = 16
-		self.gain = np.double(1) 
+		self.gain = np.double(30) 
 		self.wOrbit = 30
 		eps = 5
 		# Control output ====================================
@@ -135,6 +135,7 @@ class BLF_Controller:
 			rospy.logwarn("ANGULAR THRESHOLD VIOLATED: %.2f !", w)
 
 		# Constant Heading Velocity
+		self.vConst = 10
 		self.angularVel = w
 		return [self.vConst, self.angularVel]
 
