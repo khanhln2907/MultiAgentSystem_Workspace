@@ -57,38 +57,46 @@ class BLF_Controller:
 		# Update this internally for centralized controller
 		self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
 		
-	def updateBLFState(self, newCentroidX, newCentroidY):
-		self.TargetX = newCentroidX
-		self.TargetY = newCentroidY
-		posFilterThres = 0
-		dx = self.VmX - self.lastVmX
-		dy = self.VmY - self.lastVmY
-		isValid = abs(dx) > posFilterThres and abs(dy) > posFilterThres
-		if(isValid):
-			nBndLines = len(self.bBnd)
-			tmpV = 0
-			# Compute own BLF function
-			for j in range(nBndLines):
-				# Multiply by 10000 to increase accuracy 
-				newS = 10000 // (-1 * self.bBnd[j,0] - self.ABnd[j,0]*self.VmX - self.ABnd[j,1]*self.VmY)
-				tmpV += newS
-				#if(self.ID == 20005):
-				#	rospy.loginfo([self.ABnd[j,0], self.ABnd[j,1], -1 * self.bBnd[j,0], self.VmX, self.VmY, newS, tmpV])
+	# def updateBLFState(self, newCentroidX, newCentroidY):
+	# 	self.TargetX = newCentroidX
+	# 	self.TargetY = newCentroidY
+	# 	posFilterThres = 0
+	# 	dx = self.VmX - self.lastVmX
+	# 	dy = self.VmY - self.lastVmY
+	# 	isValid = abs(dx) > posFilterThres and abs(dy) > posFilterThres
+	# 	if(isValid):
+	# 		nBndLines = len(self.bBnd)
+	# 		tmpV = 0
+	# 		# Compute own BLF function
+	# 		for j in range(nBndLines):
+	# 			# Multiply by 10000 to increase accuracy 
+	# 			newS = 10000 // (-1 * self.bBnd[j,0] - self.ABnd[j,0]*self.VmX - self.ABnd[j,1]*self.VmY)
+	# 			tmpV += newS
+	# 			#if(self.ID == 20005):
+	# 			#	rospy.loginfo([self.ABnd[j,0], self.ABnd[j,1], -1 * self.bBnd[j,0], self.VmX, self.VmY, newS, tmpV])
 
-			innerProd = math.pow(self.VmX - self.TargetX, 2) + math.pow(self.VmY - self.TargetY, 2)
-			V = tmpV * innerProd 
+	# 		innerProd = math.pow(self.VmX - self.TargetX, 2) + math.pow(self.VmY - self.TargetY, 2)
+	# 		V = tmpV * innerProd 
 			
-			# This condition guarantees that agent maintains inside the coverage region
-			if(V < 0):
-				rospy.logwarn("ID: %d -> BLF violated", self.ID)
+	# 		# This condition guarantees that agent maintains inside the coverage region
+	# 		if(V < 0):
+	# 			rospy.logwarn("ID: %d -> BLF violated", self.ID)
 
-			# Update the distributed state and return to the centralized controller
-			self.dVBLF = V - self.lastVBLF
-			self.lastVBLF = V
-		else:
-			self.dVBLF = 0
+	# 		# Update the distributed state and return to the centralized controller
+	# 		self.dVBLF = V - self.lastVBLF
+	# 		self.lastVBLF = V
+	# 	else:
+	# 		self.dVBLF = 0
 
-		return self.dVBLF
+	# 	return self.dVBLF
+
+	def updateLyapunov(self, newCVT_2d, V, dV):
+		self.TargetX = newCVT_2d[0]
+		self.TargetY = newCVT_2d[1]
+		self.dVBLF = dV
+		self.lastVBLF = V
+		return 0
+		
 
 	def begin(self, controlGain, v0, w0, wCO, boundaries):
 		self.gain = controlGain
@@ -109,13 +117,14 @@ class BLF_Controller:
 		# This should be initalised at the beginning, however config here for easy tuning
 		self.wThres = 127
 		self.vConst = 16
-		self.gain = np.double(25) 
+		self.gain = np.double(1) 
 		self.wOrbit = 30
+		eps = 5
 		# Control output ====================================
 		# Controller selection
 		#w = self.simpleController()
 		#		w = self.__controlBLF(neighborInfo)
-		w = self.wOrbit + self.gain * np.sign(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta))
+		w = self.wOrbit + self.gain * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)
 
 		# Output cutoff
 		if(w > self.wThres):
@@ -146,24 +155,26 @@ class BLF_Controller:
 
 	# This method is only using simple Euler derivative, however can be improved by theoretical integration 
 	# and update the algorithm
-	def __controlBLF(self, neighborInfo):
-		#rospy.logwarn([neighborInfo, np.array(neighborInfo[:,1]), sum(np.array(neighborInfo[:,1]))])
-		# Some filter position here
-		posFilterThres = 0
-		dx = self.VmX - self.lastVmX
-		dy = self.VmY - self.lastVmY
-		if(np.array(neighborInfo).size == 0):
-			rospy.logwarn("No neighbor detected ! Double check Adjacent list")
-			return self.angularVel
-		else:
-			isValid = abs(dx) > posFilterThres and abs(dy) > posFilterThres
-			if(isValid):
-				dV_total = (self.dVBLF + sum(np.array(neighborInfo[:,1]))) # Add this term to avoid division to the small number in the following lines
-				dVdzx = dV_total / np.double(dx)
-				dVdzy = dV_total / np.double(dy)
-				w = self.wOrbit + self.gain * np.sign(dVdzx * math.cos(self.Theta) + dVdzy * math.sin(self.Theta))
-				#rospy.loginfo("%d dV: %.7f dx: %.7f dy: %.7f, sumAdj: %.3f", self.ID, dV_total, dx, dy, dV_Adjacent)
-				return w
-			else:
-				return self.angularVel	# If nothing happened, just keep the old angular velocity
+	# def __controlBLF(self, neighborInfo):
+	# 	#rospy.logwarn([neighborInfo, np.array(neighborInfo[:,1]), sum(np.array(neighborInfo[:,1]))])
+	# 	# Some filter position here
+	# 	posFilterThres = 0
+	# 	dx = self.VmX - self.lastVmX
+	# 	dy = self.VmY - self.lastVmY
+	# 	if(np.array(neighborInfo).size == 0):
+	# 		rospy.logwarn("No neighbor detected ! Double check Adjacent list")
+	# 		return self.angularVel
+	# 	else:
+	# 		isValid = abs(dx) > posFilterThres and abs(dy) > posFilterThres
+	# 		if(isValid):
+	# 			dV_total = (self.dVBLF + sum(np.array(neighborInfo[:,1]))) # Add this term to avoid division to the small number in the following lines
+	# 			dVdzx = dV_total / np.double(dx)
+	# 			dVdzy = dV_total / np.double(dy)
+	# 			w = self.wOrbit + self.gain * np.sign(dVdzx * math.cos(self.Theta) + dVdzy * math.sin(self.Theta))
+	# 			#rospy.loginfo("%d dV: %.7f dx: %.7f dy: %.7f, sumAdj: %.3f", self.ID, dV_total, dx, dy, dV_Adjacent)
+	# 			return w
+	# 		else:
+	# 			return self.angularVel	# If nothing happened, just keep the old angular velocity
 		
+def calc_sigmoid(x, eps):
+	return x / (abs(x) + eps)

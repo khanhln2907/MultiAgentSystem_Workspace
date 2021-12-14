@@ -203,13 +203,13 @@ class Centralized_Controller:
 
 			# Compute the control output for all agents
 			for agentID in range(0, self._nAgent):
-				self._AgentList[agentID].updateBLFState(centroidArr[agentID][0], centroidArr[agentID][1])
 				dV = dVidziList[agentID]
 				for neighborID in range(0, self._nAgent):
 					if(self.adjacentMat[neighborID][agentID] == 1):
-						#rospy.loginfo(lapunovMat[neighborID][2][0][0])
+						
 						dV += lapunovMat[neighborID][2][0][agentID]
-
+				#rospy.loginfo(centroidArr[agentID])
+				self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
 				[v, w] = self._AgentList[agentID].controlBLF(dV)
 				# Publish the message
 				msg = ControlMsg()
@@ -217,24 +217,6 @@ class Centralized_Controller:
 				msg.translation = v
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
-
-
-			# Compute the control output for all agents
-			# for i in range(0, self._nAgent):
-			# 	# Process the information of adjacent agent
-			# 	# self._AgentList[i].verticesList = Vertices[i] # Might need this for integration
-			# 	# ...
-			# 	neighborInfo = []
-			# 	for neighborID in range(0, self._nAgent):
-			# 		if(self.adjacentMat[i][neighborID] == 1):
-			# 			neighborInfo.append([self._AgentList[neighborID].ID, self._AgentList[neighborID].dVBLF])
-			# 	[v, w] = self._AgentList[i].controlBLF(np.mat(neighborInfo))
-			# 	# Publish the message
-			# 	msg = ControlMsg()
-			# 	msg.ID = self._AgentList[i].ID
-			# 	msg.translation = v
-			# 	msg.rotation = w			
-			# 	self.controlInputPublisher.publish(msg)
 
 	def publishDebugInfo(self):
 		msg = CentralizedMsg()
