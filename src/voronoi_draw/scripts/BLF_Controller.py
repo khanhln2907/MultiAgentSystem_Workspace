@@ -212,6 +212,7 @@ class BLF_Controller:
 		
 		return str
 
+		
 
 def calcSigmoid(x, eps):
 	return x / (abs(x) + eps)

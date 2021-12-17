@@ -213,6 +213,15 @@ class Centralized_Controller:
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
 	
+
+	def safeExit(self):
+		for agentID in range(0, self._nAgent):
+			msg = ControlMsg()
+			msg.ID = self._AgentList[agentID].ID
+			msg.translation = 0
+			msg.rotation = 30			
+			self.controlInputPublisher.publish(msg)
+
 	def printDebugInfo(self):
 		sumV = 0
 		for agent in self._AgentList:

@@ -136,18 +136,23 @@ if __name__ == '__main__':
 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	
-	while not rospy.is_shutdown():		
-		# Execute if the central node is in operating state
-		if(centralCom.startFlag == True):
-			tic = time.time()
-			centralCom.updateCoverage()
-			# Capture execution time
-			toc = time.time() - tic
+	while not rospy.is_shutdown():
+		try:		
+			# Execute if the central node is in operating state
+			if(centralCom.startFlag == True):
+				tic = time.time()
+				centralCom.updateCoverage()
+				# Capture execution time
+				toc = time.time() - tic
 
-			# Print with low frequency for debugging
-			if((time.time() - centralCom.lastPrintTime) * 1000 > 0):
-				centralCom.printDebugInfo()
-				centralCom.lastPrintTime = time.time()
-				drawback()
-		# ROS routine
-		rate.sleep()
+				# Print with low frequency for debugging
+				if((time.time() - centralCom.lastPrintTime) * 1000 > 0):
+					centralCom.printDebugInfo()
+					centralCom.lastPrintTime = time.time()
+					drawback()
+			# ROS routine
+			rate.sleep()
+
+		except:
+			"Error occurred! Stop all motors"
+			centralCom.safeExit()
