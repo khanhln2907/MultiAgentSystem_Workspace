@@ -229,11 +229,9 @@
 /home/qingchen/catkin_ws/build/qualisys/CMakeFiles/install/local.dir
 /home/qingchen/catkin_ws/build/qualisys/CMakeFiles/test.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/list_install_components.dir
-/home/qingchen/catkin_ws/build/tip/CMakeFiles/install.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_geneus.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_generate_messages_eus.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_gencpp.dir
-/home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_node.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_generate_messages_cpp.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_generate_messages.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/install/local.dir
@@ -252,6 +250,7 @@
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/tip_genpy.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/edit_cache.dir
 /home/qingchen/catkin_ws/build/tip/CMakeFiles/AgentNode.dir
+/home/qingchen/catkin_ws/build/tip/CMakeFiles/install.dir
 /home/qingchen/catkin_ws/build/usb_cam/CMakeFiles/install.dir
 /home/qingchen/catkin_ws/build/usb_cam/CMakeFiles/rebuild_cache.dir
 /home/qingchen/catkin_ws/build/usb_cam/CMakeFiles/edit_cache.dir

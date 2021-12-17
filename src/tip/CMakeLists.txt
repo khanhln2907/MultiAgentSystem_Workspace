@@ -133,16 +133,16 @@ include_directories(
 # add_dependencies(tip ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
- add_executable(tip_node src/tip_node.cpp) # src/Unicycle_Base.cpp src/Unicycle_BLF_Agent.cpp)
+ #add_executable(tip_node src/tip_node.cpp) # src/Unicycle_Base.cpp src/Unicycle_BLF_Agent.cpp)
  #add_executable(CentralizedNode src/CentralizedNode.cpp src/CentralizedMonitor.cpp)
  add_executable(AgentNode src/AgentNode.cpp src/Unicycle_Base.cpp src/Unicycle_BLF_Agent.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
- add_dependencies(tip_node tip_node_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ #add_dependencies(tip_node tip_node_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(tip_node ${catkin_LIBRARIES})
+#target_link_libraries(tip_node ${catkin_LIBRARIES})
 #target_link_libraries(CentralizedNode ${catkin_LIBRARIES})
 target_link_libraries(AgentNode ${catkin_LIBRARIES})
 

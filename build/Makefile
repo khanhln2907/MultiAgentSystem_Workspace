@@ -2012,19 +2012,6 @@ tip_gencpp/fast:
 .PHONY : tip_gencpp/fast
 
 #=============================================================================
-# Target rules for targets named tip_node
-
-# Build rule for target.
-tip_node: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 tip_node
-.PHONY : tip_node
-
-# fast build rule for target.
-tip_node/fast:
-	$(MAKE) -f tip/CMakeFiles/tip_node.dir/build.make tip/CMakeFiles/tip_node.dir/build
-.PHONY : tip_node/fast
-
-#=============================================================================
 # Target rules for targets named tip_generate_messages_cpp
 
 # Build rule for target.
@@ -3206,7 +3193,6 @@ help:
 	@echo "... tip_geneus"
 	@echo "... tip_generate_messages_eus"
 	@echo "... tip_gencpp"
-	@echo "... tip_node"
 	@echo "... tip_generate_messages_cpp"
 	@echo "... tip_generate_messages"
 	@echo "... _tip_generate_messages_check_deps_ControlMsg"

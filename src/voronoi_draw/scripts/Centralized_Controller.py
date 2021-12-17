@@ -122,7 +122,7 @@ class Centralized_Controller:
 		vmList = []
 		# Create an array that contains all agents' position
 		for i in range(0, self._nAgent):
-			vmList.append([self._AgentList[i].VmX, self._AgentList[i].VmY]) 
+			vmList.append([self._AgentList[i].Vm[0], self._AgentList[i].Vm[1]]) 
 
 		vmArr = np.array(vmList) / SCALE
 		pntsv = [ [] for row in vmArr]
@@ -149,7 +149,7 @@ class Centralized_Controller:
 	def updateCoverage(self):
 		tmpTessel = []
 		for i in range(0, self._nAgent):
-			tmpTessel.append([self._AgentList[i].VmX, self._AgentList[i].VmY]) 
+			tmpTessel.append([self._AgentList[i].Vm[0], self._AgentList[i].Vm[1]]) 
 
 		pntsArr = np.array(tmpTessel)
 		# Boundary lines of the coverage area. This is still hard coded until now
@@ -186,7 +186,7 @@ class Centralized_Controller:
 					neighborReport = NeighborVoronoiInfo()
 					if(self.adjacentMat[agentID][neighborID] == 1):
 						neighborReport.neighborID = self._AgentList[neighborID].ID
-						neighborReport.vm_coord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
+						neighborReport.vm_coord_2d = np.array([self._AgentList[neighborID].Vm[0], self._AgentList[neighborID].Vm[1]])
 						neighborReport.com_v1_2d = commonverMat[agentID][neighborID][0]
 						neighborReport.com_v2_2d = commonverMat[agentID][neighborID][1]
 						telegraph.append(neighborReport)
@@ -213,4 +213,14 @@ class Centralized_Controller:
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
 	
+	def printDebugInfo(self):
+		sumV = 0
+		for agent in self._AgentList:
+			sumV += agent.lastVBLF
 
+		str = "===============\n Report V: %4.1f\n" %(sumV)
+		for agent in self._AgentList:
+			str += agent.getDebugInfo()
+		
+		rospy.loginfo(str)
+		rospy.loginfo(self.adjacentMat)

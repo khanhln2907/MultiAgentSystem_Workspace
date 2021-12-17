@@ -66,7 +66,7 @@ def drawback():
 	vmList = []
 	# Create an array that contains all agents' position
 	for i in range(0, centralCom._nAgent):
-		vmList.append([centralCom._AgentList[i].VmX, centralCom._AgentList[i].VmY]) 
+		vmList.append([centralCom._AgentList[i].Vm[0], centralCom._AgentList[i].Vm[1]]) 
 	pins = np.array(vmList) / 5
 
 	bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]]) / 5
@@ -136,9 +136,7 @@ if __name__ == '__main__':
 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	
-	while not rospy.is_shutdown():
-
-		
+	while not rospy.is_shutdown():		
 		# Execute if the central node is in operating state
 		if(centralCom.startFlag == True):
 			tic = time.time()
@@ -147,25 +145,9 @@ if __name__ == '__main__':
 			toc = time.time() - tic
 
 			# Print with low frequency for debugging
-			if((time.time() - centralCom.lastPrintTime) * 1000 > 20):
-				sumV = 0
-				for agent in centralCom._AgentList:
-					sumV += agent.lastVBLF
-				str = "\n"
-				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
-				
-				for agent in centralCom._AgentList:	
-					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f  Err: %.2f \n"\
-					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
-					agent.VmX, agent.VmY,\
-					agent.CVT[0], agent.CVT[1],\
-					agent.angularVel, agent.testW,\
-					agent.lastVBLF,\
-					math.sqrt(pow(agent.VmX - agent.CVT[0],2) + pow(agent.VmY - agent.CVT[1],2)))						
-				rospy.loginfo(str)
-				rospy.loginfo(centralCom.adjacentMat)
+			if((time.time() - centralCom.lastPrintTime) * 1000 > 0):
+				centralCom.printDebugInfo()
 				centralCom.lastPrintTime = time.time()
-
 				drawback()
 		# ROS routine
 		rate.sleep()

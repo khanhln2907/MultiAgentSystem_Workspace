@@ -14,8 +14,15 @@ class NeighborVoronoiInfo:
 class NeighborLyapunoInfo:
 	publisherID = 0
 	neighborID = 0
-	dVidzj = 0		# i is my index, j is
+	dCidzj = np.zeros([2,2])
+	dVidzj = np.zeros([2,1])		# i is my index, j is the neighbor
 
+	def getInfo(self):
+		str = ""
+		str += "i: %d > j: %d.  dVidzj: [%.8f, %.8f] dCidzj: [%.8f ,%.8f; %.8f ,%.8f] \n" %(self.publisherID, self.neighborID,\
+														 self.dVidzj[0], self.dVidzj[1],\
+														self.dCidzj[0,0], self.dCidzj[0,1], self.dCidzj[1,0], self.dCidzj[1,1])
+		return str
 
 # State Feedback from the sensos, qualisys, ...
 class BLF_Controller:
@@ -30,8 +37,7 @@ class BLF_Controller:
 		self.PosX = 200*np.random.rand() + 30
 		self.PosY = 200*np.random.rand() + 30
 		self.Theta = 0
-		self.VmX = 200*np.random.rand() + 30
-		self.VmY = 200*np.random.rand() + 30
+		self.Vm = np.array([200*np.random.rand() + 30, 200*np.random.rand() + 30])
 		self.VBLF = 0
 		self.verticesList = 0
 		
@@ -41,9 +47,8 @@ class BLF_Controller:
 		self.lastVmY = 0
 		self.lastVBLF = 0
 		self.curVBLF = 0 
-		self.dVBLF = 0
 		self.gain = 0
-		self.testW = 0
+
 		# Constraints
 		self.vConst = 0
 		self.wThres = 0
@@ -55,7 +60,16 @@ class BLF_Controller:
 		self.CVT = np.array([0, 0])
 
 		# Lyapunov State
+		self.lastLyapunovReport = []
 		self.dVidzi = 0
+
+		# Evaluation of the computation
+		self.dVBLF = 0
+		self.dCidzi = np.array([[0.0, 0.0],[0.0, 0.0]])
+		self.dC = np.array([0.0, 0.0])
+		self.dVM = np.array([0.0, 0.0])
+		self.dV = np.array([0.0, 0.0])
+		self.updateCnt = 0
 
 	def begin(self, controlGain, v0, w0, wCO, boundaries):
 		self.gain = controlGain
@@ -69,31 +83,35 @@ class BLF_Controller:
 			self.ABnd[j,0] = round(self.ABnd[j,0])
 			self.ABnd[j,1] = round(self.ABnd[j,1])
 			self.bBnd[j,0] = round(self.bBnd[j,0])
-		#rospy.loginfo([self.ABnd, self.bBnd])
-
-	def updateVM(self, radius):
-		# Save it befoe updating new values
-		self.lastVmX = self.VmX
-		self.lastVmY = self.VmY
-		# Calculate the VM ourself so dont need to change the config in cpp file
-		self.VmX = self.PosX - self.vConst / self.wOrbit * math.sin(self.Theta) 
-		self.VmY = self.PosY + self.vConst / self.wOrbit * math.cos(self.Theta)
-
+		
 	def updateState(self, data):	
 		self.ID = np.int32(data.packet.TransmitterID)
-		self.PosX = np.float32(data.packet.AgentPosX)
-		self.PosY = np.float32(data.packet.AgentPosY)
-		self.Theta = np.float32(data.packet.AgentTheta)
-		
-		# Update this internally for centralized controller
-		self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
-		
-	def updateLyapunov(self, newCVT_2d, V, dV):
-		self.TargetX = newCVT_2d[0]
-		self.TargetY = newCVT_2d[1]
-		self.dVBLF = dV
-		self.lastVBLF = V
-		return 0
+		x = np.float32(data.packet.AgentPosX)
+		y = np.float32(data.packet.AgentPosY)
+		the = np.float32(data.packet.AgentTheta)
+		self.PosX = x
+		self.PosY = y
+		self.Theta = the
+		# Update virtual mass
+		# Save it befoe updating new values
+		self.lastVmX = self.Vm[0]
+		self.lastVmY = self.Vm[1]
+		# Calculate the VM ourself so dont need to change the config in cpp file
+		radius = self.vConst // self.wOrbit
+		radius = 200
+		self.Vm[0] = self.PosX -  radius* math.sin(self.Theta) 
+		self.Vm[1] = self.PosY +  radius* math.cos(self.Theta)
+
+		tmpdVMx = self.Vm[0] - self.lastVmX
+		tmpdVMy = self.Vm[1] - self.lastVmY
+
+		self.updateCnt += 1
+		if(tmpdVMx == 0.0 and tmpdVMy == 0.0):
+			pass
+		else:
+			self.dVM[0] = tmpdVMx
+			self.dVM[1] = tmpdVMy
+		#rospy.loginfo([self.Vm, [self.lastVmX, self.lastVmY], self.dVM])
 		
 	# Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
 	def updateVoronoiInfo(self, myCVT, neighborTelegraph, mVi, bndCoeff):
@@ -105,14 +123,15 @@ class BLF_Controller:
 		controlParam.Q_2x2 = 5 * np.identity(2)
 
 		# Update the CVT
-		self.CVT =myCVT 
+		self.dC = myCVT - self.CVT
+		self.CVT = myCVT 
+		myZ = np.array([self.Vm[0], self.Vm[1]])
 
 		nNeighbor = len(neighborTelegraph)
 
 		dCi_dzi = 0
 		dCi_dzj_list = []
 		for i in range(nNeighbor):
-			myZ = np.array([self.VmX, self.VmY])
 			adjCoord_2d = np.array(neighborTelegraph[i].vm_coord_2d)
 			ver1 = np.array(neighborTelegraph[i].com_v1_2d)
 			ver2 = np.array(neighborTelegraph[i].com_v2_2d)
@@ -126,19 +145,26 @@ class BLF_Controller:
 		myAgent.C = myCVT
 		myAgent.z = myZ
 		myAgent.dCi_dzi = dCi_dzi
-		[self.lastVBLF, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+		self.dCidzi = dCi_dzi
+		[V, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+		self.dVBLF = V - self.lastVBLF
+		self.lastVBLF = V
 
 		dVidzjTelegraph = []
 		for i in range(nNeighbor):
 			tmp = NeighborLyapunoInfo()
 			tmp.publisherID = self.ID
 			tmp.neighborID = neighborTelegraph[i].neighborID
+			tmp.dCidzj = dCi_dzj_list[i]
 			tmp.dVidzj = dVidzj_Arr[i]
 			dVidzjTelegraph.append(tmp)
 
 		return dVidzjTelegraph
 	
 	def updateControlInput(self, lyapunovTelegraph):
+		# Save the last sampled record for debugging purpose
+		self.lastLyapunovReport = lyapunovTelegraph
+
 		sumdV = self.dVidzi		
 		for msg in lyapunovTelegraph:
 			sumdV += msg.dVidzj
@@ -164,21 +190,28 @@ class BLF_Controller:
 		self.angularVel = w
 		return [self.vConst, self.angularVel]
 
-
-	def computeVBLF(self):
-		nBndLines = len(self.bBnd)
-		tmpV = 0
-		for j in range(nBndLines):
-			tmpV += 1 // (self.bBnd[j] - self.ABnd[j][0] * self.VmX + self.ABnd[j][1] * self.VmY)
-		V = tmpV * (math.pow(self.VmX - self.TargetX, 2) + math.pow(self.VmY - self.TargetY, 2)) / 2 
-		return V
-
-	def computeSimple(self):
-		w = self.wOrbit + self.gain * np.sign((self.VmX - self.TargetX) * math.cos(self.Theta) 
-							+ (self.VmY - self.TargetY) * math.sin(self.Theta))
-		return w
-
 	
+	def getDebugInfo(self):
+		lyapuStr = "dVidzi: [%.4f %4f]\n" %(self.dVidzi[0], self.dVidzi[1])
+		for report in self.lastLyapunovReport:
+			lyapuStr += report.getInfo()
+	
+
+		str = "Agent: %d\nP[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f  Err: %.2f\
+					.\nFeedback:\n%s dVM [%.9f %.9f] dC [%.4f %.4f] dV: %.5f Cnt: %d\n"\
+					%(self.ID, self.PosX, self.PosY, self.Theta, \
+					self.Vm[0], self.Vm[1],\
+					self.CVT[0], self.CVT[1],\
+					self.vConst, self.angularVel,\
+					self.lastVBLF,\
+					math.sqrt(pow(self.Vm[0] - self.CVT[0],2) + pow(self.Vm[1] - self.CVT[1],2)),\
+					lyapuStr, self.dVM[0], self.dVM[1], self.dC[0], self.dC[1], self.dVBLF,\
+					self.updateCnt					)
+
+		str += "dCidzi: [%.6f, %.6f; %.6f, %.6f] \n" %(self.dCidzi[0,0], self.dCidzi[0,1], self.dCidzi[1,0], self.dCidzi[1,1])
 		
+		return str
+
+
 def calcSigmoid(x, eps):
 	return x / (abs(x) + eps)
