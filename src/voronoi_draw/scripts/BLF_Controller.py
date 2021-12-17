@@ -34,9 +34,8 @@ class BLF_Controller:
 		self.VmY = 200*np.random.rand() + 30
 		self.VBLF = 0
 		self.verticesList = 0
-		# Target
-		self.TargetX = 0
-		self.TargetY = 0
+		
+
 		# Algorithm Variables
 		self.lastVmX = 0
 		self.lastVmY = 0
@@ -51,6 +50,9 @@ class BLF_Controller:
 		self.wOrbit = 0
 		# Output
 		self.angularVel = 0
+
+		# Voronoi State
+		self.CVT = np.array([0, 0])
 
 		# Lyapunov State
 		self.dVidzi = 0
@@ -94,7 +96,7 @@ class BLF_Controller:
 		return 0
 		
 	# Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
-	def updateVoronoiInfo(self, myCVT, adjPart, mVi, bndCoeff):
+	def updateVoronoiInfo(self, myCVT, neighborTelegraph, mVi, bndCoeff):
 		# sOME ONETIME CONFIG
 		controlParam = ControlParameter()
 		controlParam.eps = 5
@@ -102,18 +104,19 @@ class BLF_Controller:
 		controlParam.P = 3
 		controlParam.Q_2x2 = 5 * np.identity(2)
 
+		# Update the CVT
+		self.CVT =myCVT 
 
-		nNeighbor = len(adjPart)
+		nNeighbor = len(neighborTelegraph)
 
 		dCi_dzi = 0
 		dCi_dzj_list = []
 		for i in range(nNeighbor):
 			myZ = np.array([self.VmX, self.VmY])
-			myCVT = np.array([self.VmX, self.VmY])
-			adjCoord_2d = np.array(adjPart[i].vm_coord_2d)
-			ver1 = np.array(adjPart[i].com_v1_2d)
-			ver2 = np.array(adjPart[i].com_v2_2d)
-			dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myZ, myCVT, mVi, adjCoord_2d, ver1, ver2)
+			adjCoord_2d = np.array(neighborTelegraph[i].vm_coord_2d)
+			ver1 = np.array(neighborTelegraph[i].com_v1_2d)
+			ver2 = np.array(neighborTelegraph[i].com_v2_2d)
+			dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2DCalCVTPartialDerivative(myZ, myCVT, mVi, adjCoord_2d, ver1, ver2)
 			
 			dCi_dzi += dCi_dzi_AdjacentJ
 			dCi_dzj_list.append(dCi_dzj)
@@ -123,13 +126,13 @@ class BLF_Controller:
 		myAgent.C = myCVT
 		myAgent.z = myZ
 		myAgent.dCi_dzi = dCi_dzi
-		[self.lastVBLF, self.dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+		[self.lastVBLF, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
 
 		dVidzjTelegraph = []
 		for i in range(nNeighbor):
 			tmp = NeighborLyapunoInfo()
 			tmp.publisherID = self.ID
-			tmp.neighborID = adjPart[i].neighborID
+			tmp.neighborID = neighborTelegraph[i].neighborID
 			tmp.dVidzj = dVidzj_Arr[i]
 			dVidzjTelegraph.append(tmp)
 
@@ -148,7 +151,7 @@ class BLF_Controller:
 		self.wOrbit = 30
 		eps = 5
 		# Control output ====================================
-		w = self.wOrbit + self.gain * calc_sigmoid(sumdV[0] * math.cos(self.Theta) + sumdV[1] * math.sin(self.Theta), eps)
+		w = self.wOrbit + self.gain * calcSigmoid(sumdV[0] * math.cos(self.Theta) + sumdV[1] * math.sin(self.Theta), eps)
 
 		# Output cutoff
 		if(w > self.wThres):
@@ -177,5 +180,5 @@ class BLF_Controller:
 
 	
 		
-def calc_sigmoid(x, eps):
+def calcSigmoid(x, eps):
 	return x / (abs(x) + eps)

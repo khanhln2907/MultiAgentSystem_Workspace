@@ -176,10 +176,7 @@ class Centralized_Controller:
 			lyapunovTelegraphList = []
 			for agentID in range(0, self._nAgent):
 				# Information of agent <agentID>
-				myAgent = VoronoiPrivateData()
-				myAgent.C = np.array(centroidArr[agentID])
-				myAgent.z = np.array([self._AgentList[agentID].VmX, self._AgentList[agentID].VmY])
-				myAgent.dCi_dzi = 0
+				myCVT = np.array(centroidArr[agentID])
 
 				# Parsed neighbor information
 				telegraph = []
@@ -192,10 +189,10 @@ class Centralized_Controller:
 						neighborReport.com_v2_2d = commonverMat[agentID][neighborID][1]
 						telegraph.append(neighborReport)
 
-				retTelegraph = self._AgentList[agentID].updateVoronoiInfo(myAgent,telegraph, partitionMasses[agentID], self.bndCoeff)
+				# Transmit all neighbor info to the agent to obtain the Lyapunov partial derivative
+				retTelegraph = self._AgentList[agentID].updateVoronoiInfo(myCVT,telegraph, partitionMasses[agentID], self.bndCoeff)
 				lyapunovTelegraphList.append(retTelegraph)
 
-			#rospy.loginfo(lyapunovTelegraphList)
 			# Perfrom the routing of the telegraph for the feedback of the Lyapunov derivative
 			for agentID in range(0, self._nAgent):
 				myTel = []
@@ -214,23 +211,4 @@ class Centralized_Controller:
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
 	
-
-	def publishDebugInfo(self):
-		msg = CentralizedMsg()
-		self.cntMsg += 1
-		debugInfo = []
-		debugInfo.append(self.cntMsg)
-		for agents in (self._AgentList):
-			debugInfo.append(agents.ID)
-			debugInfo.append(agents.PosX)
-			debugInfo.append(agents.PosY)
-			#debugInfo.append(agents.Theta)
-			debugInfo.append(agents.VmX)
-			debugInfo.append(agents.VmY)
-			#debugInfo.append(agents.TargetX)
-			#debugInfo.append(agents.TargetY)
-			debugInfo.append(agents.lastVBLF)
-		# Publish
-		msg.valueArr = debugInfo
-		self.infoPublisher.publish(msg)	
 

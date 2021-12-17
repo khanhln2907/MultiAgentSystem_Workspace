@@ -12,7 +12,7 @@ class ControlParameter:
     Q_2x2 = np.array([[0, 0], [0, 0]])
     gain = 1
 
-def Voronoi2D_cal_dV_dz(vorPrivateData, dCjdzi_Arr, boundaryCoeff, controlParameter):
+def Voronoi2DCaldVdz(vorPrivateData, dCjdzi_Arr, boundaryCoeff, controlParameter):
     nNeighbor = len(dCjdzi_Arr)
     numCoeff = len(boundaryCoeff)
     # Update the Lyapunov state 
@@ -47,7 +47,7 @@ def Voronoi2D_cal_dV_dz(vorPrivateData, dCjdzi_Arr, boundaryCoeff, controlParame
        
     return [Vi, dVidzi, dVidzj_Arr]        
         
-def compute_Lyapunov(dVidzi, dVjdzi_Arr):
+def computeLyapunov(dVidzi, dVjdzi_Arr):
     # Compute the Lyapunov partial derivative for each agents
     # Initialize the Lyapunov Gradient of itself
     sumdV_dzi = dVidzi

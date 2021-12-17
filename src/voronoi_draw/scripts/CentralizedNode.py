@@ -107,7 +107,6 @@ if __name__ == '__main__':
 		if(centralCom.startFlag == True):
 			tic = time.time()
 			centralCom.updateCoverage()
-			centralCom.publishDebugInfo()
 			# Capture execution time
 			toc = time.time() - tic
 
@@ -123,10 +122,10 @@ if __name__ == '__main__':
 					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f  Err: %.2f \n"\
 					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
 					agent.VmX, agent.VmY,\
-					agent.TargetX, agent.TargetY,\
+					agent.CVT[0], agent.CVT[1],\
 					agent.angularVel, agent.testW,\
 					agent.lastVBLF,\
-					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
+					math.sqrt(pow(agent.VmX - agent.CVT[0],2) + pow(agent.VmY - agent.CVT[1],2)))						
 				rospy.loginfo(str)
 				rospy.loginfo(centralCom.adjacentMat)
 				centralCom.lastPrintTime = time.time()
