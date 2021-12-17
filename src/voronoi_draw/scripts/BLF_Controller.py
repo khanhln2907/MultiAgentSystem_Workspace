@@ -51,8 +51,11 @@ class BLF_Controller:
 		self.lastVmX = self.VmX
 		self.lastVmY = self.VmY
 		# Calculate the VM ourself so dont need to change the config in cpp file
-		self.VmX = self.PosX - self.vConst/self.wOrbit * math.sin(self.Theta) 
-		self.VmY = self.PosY + self.vConst/self.wOrbit * math.cos(self.Theta)
+		radius = self.vConst//self.wOrbit
+		radius = 200
+		self.VmX = self.PosX - radius * math.sin(self.Theta) 
+		self.VmY = self.PosY + radius * math.cos(self.Theta)
+		#rospy.loginfo([self.PosX, self.PosY, self.Theta, self.VmX, self.VmY])
 
 	def updateState(self, data):	
 		self.ID = np.int32(data.packet.TransmitterID)
@@ -113,11 +116,11 @@ class BLF_Controller:
 		# This should be initalised at the beginning, however config here for easy tuning
 		self.wThres = 127
 		self.vConst = 16
-		self.gain = np.double(30) 
+		self.gain = np.double(2) 
 		self.wOrbit = 30
-		eps = 5
+		eps = 8
 		# Control output ====================================
-		w = self.wOrbit + self.gain * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)
+		w = self.wOrbit + self.gain * self.wOrbit * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)
 
 		# Output cutoff
 		if(w > self.wThres):
@@ -128,7 +131,6 @@ class BLF_Controller:
 			rospy.logwarn("ANGULAR THRESHOLD VIOLATED: %.2f !", w)
 
 		# Constant Heading Velocity
-		self.vConst = 16
 		self.angularVel = w
 		return [self.vConst, self.angularVel]
 
