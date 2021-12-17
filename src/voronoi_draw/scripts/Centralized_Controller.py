@@ -112,21 +112,20 @@ class Centralized_Controller:
 			# Do something else ...
 			pass
 			
-	def drawback(self):
+	def drawBack(self, rosPublisher):
+		SCALE = 5
+
 		bridge = CvBridge()
-		rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
-		cv2.rectangle(rgb, (20, 20), (4000, 4000), (255,0,0), thickness=4)
+		rgb = np.full((2820/SCALE,4020/SCALE,3), 255, dtype=np.uint8)
+		cv2.rectangle(rgb, (20, 20)/SCALE, (4000, 4000)/SCALE, (255,0,0)/SCALE, thickness=4)
 
 		vmList = []
 		# Create an array that contains all agents' position
 		for i in range(0, self._nAgent):
 			vmList.append([self._AgentList[i].VmX, self._AgentList[i].VmY]) 
 
-		vmArr = np.array(vmList)
-		bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-		#pnts,vorn, centroid = voronoi(vmArr,bnd)
+		vmArr = np.array(vmList) / SCALE
 		pntsv = [ [] for row in vmArr]
-
 		for i, obj in enumerate(vmArr):
 			pntsv[i] =  np.array(self.VoronoiVertices[i])
 			if len(pntsv[i]) >= 3:
@@ -140,10 +139,13 @@ class Centralized_Controller:
 					temp_y_2  = temp_2.item(1)
 					cv2.line(rgb, (int(temp_x_1), int(temp_y_1)), (int(temp_x_2), int(temp_y_2)), (255,0,0), thickness=4)		
 					rgb_addline = bridge.cv2_to_imgmsg(cv2.flip(rgb,1), 'rgb8')
-					self.CVPublisher.publish(rgb_addline)
+					rosPublisher.publish(rgb_addline)
 		return 0
 
-
+	# Compute Voronoi Tessellation for each agent
+	# Perform information routing to each control handle
+	# Mapping the partial derivative of the Lyapunov Feedback to each adjacent agent
+	# Publish the control input
 	def updateCoverage(self):
 		tmpTessel = []
 		for i in range(0, self._nAgent):
