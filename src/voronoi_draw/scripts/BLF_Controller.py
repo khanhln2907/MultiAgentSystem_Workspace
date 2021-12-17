@@ -2,13 +2,19 @@ import numpy as np
 import rospy
 import math
 from voronoi_custom import getConvexBndMatrix 
+from controlAlgo import *
 
-class NeighborInfo:
+class NeighborVoronoiInfo:
 	neighborID = 0
 	vm_coord_2d = 0
 	cvt_coord_2d = 0
 	com_v1_2d = 0
 	com_v2_2d = 0
+
+class NeighborLyapunoInfo:
+	publisherID = 0
+	neighborID = 0
+	dVidzj = 0		# i is my index, j is
 
 
 # State Feedback from the sensos, qualisys, ...
@@ -46,14 +52,30 @@ class BLF_Controller:
 		# Output
 		self.angularVel = 0
 
+		# Lyapunov State
+		self.dVidzi = 0
+
+	def begin(self, controlGain, v0, w0, wCO, boundaries):
+		self.gain = controlGain
+		self.vConst = v0
+		self.wOrbit = w0
+		self.wThres = wCO
+		[self.ABnd, self.bBnd] = getConvexBndMatrix(boundaries)
+		# filter the boundary lines in case perpendicular to Oy
+		eps = 0.01
+		for j in range(len(self.bBnd)):
+			self.ABnd[j,0] = round(self.ABnd[j,0])
+			self.ABnd[j,1] = round(self.ABnd[j,1])
+			self.bBnd[j,0] = round(self.bBnd[j,0])
+		#rospy.loginfo([self.ABnd, self.bBnd])
+
 	def updateVM(self, radius):
 		# Save it befoe updating new values
 		self.lastVmX = self.VmX
 		self.lastVmY = self.VmY
 		# Calculate the VM ourself so dont need to change the config in cpp file
-		radius = 200 # Using constant orbit Radius for now
-		self.VmX = self.PosX - 200 * math.sin(self.Theta) 
-		self.VmY = self.PosY + 200 * math.cos(self.Theta)
+		self.VmX = self.PosX - self.vConst / self.wOrbit * math.sin(self.Theta) 
+		self.VmY = self.PosY + self.vConst / self.wOrbit * math.cos(self.Theta)
 
 	def updateState(self, data):	
 		self.ID = np.int32(data.packet.TransmitterID)
@@ -71,45 +93,53 @@ class BLF_Controller:
 		self.lastVBLF = V
 		return 0
 		
-	# # Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
-	# def updateVoronoiInfo(self, myCVT, adjPart):
-	# 	nNeighbor = len(adjPart)
-
-	# 	dCi_dzi = 0
-	# 	for i in range(nNeighbor):
-	# 		myZ = np.array([self.VmX, self.VmY])
-	# 		myCVT = np.array([self.VmX, self.VmY])
-	# 		dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(, myAgent.C, partitionMasses[agentID],\
-	# 									adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-	# 		#myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-	# 		#dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
-		
-	# 	for neighborID in range(0, self._nAgent):
-	# 		if(self.adjacentMat[agentID][neighborID] == 1):
-	# 			adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
-	# 			dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
-	# 										adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-	# 			myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-	# 			dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
+	# Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
+	def updateVoronoiInfo(self, myCVT, adjPart, mVi, bndCoeff):
+		# sOME ONETIME CONFIG
+		controlParam = ControlParameter()
+		controlParam.eps = 5
+		controlParam.gain = 3
+		controlParam.P = 3
+		controlParam.Q_2x2 = 5 * np.identity(2)
 
 
-	# 	return 0
+		nNeighbor = len(adjPart)
 
-	def begin(self, controlGain, v0, w0, wCO, boundaries):
-		self.gain = controlGain
-		self.vConst = v0
-		self.wOrbit = w0
-		self.wThres = wCO
-		[self.ABnd, self.bBnd] = getConvexBndMatrix(boundaries)
-		# filter the boundary lines in case perpendicular to Oy
-		eps = 0.01
-		for j in range(len(self.bBnd)):
-			self.ABnd[j,0] = round(self.ABnd[j,0])
-			self.ABnd[j,1] = round(self.ABnd[j,1])
-			self.bBnd[j,0] = round(self.bBnd[j,0])
-		#rospy.loginfo([self.ABnd, self.bBnd])
+		dCi_dzi = 0
+		dCi_dzj_list = []
+		for i in range(nNeighbor):
+			myZ = np.array([self.VmX, self.VmY])
+			myCVT = np.array([self.VmX, self.VmY])
+			adjCoord_2d = np.array(adjPart[i].vm_coord_2d)
+			ver1 = np.array(adjPart[i].com_v1_2d)
+			ver2 = np.array(adjPart[i].com_v2_2d)
+			dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myZ, myCVT, mVi, adjCoord_2d, ver1, ver2)
+			
+			dCi_dzi += dCi_dzi_AdjacentJ
+			dCi_dzj_list.append(dCi_dzj)
 
-	def controlBLF(self, dV):	
+
+		myAgent = VoronoiPrivateData()
+		myAgent.C = myCVT
+		myAgent.z = myZ
+		myAgent.dCi_dzi = dCi_dzi
+		[self.lastVBLF, self.dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+
+		dVidzjTelegraph = []
+		for i in range(nNeighbor):
+			tmp = NeighborLyapunoInfo()
+			tmp.publisherID = self.ID
+			tmp.neighborID = adjPart[i].neighborID
+			tmp.dVidzj = dVidzj_Arr[i]
+			dVidzjTelegraph.append(tmp)
+
+		return dVidzjTelegraph
+	
+	def updateControlInput(self, lyapunovTelegraph):
+		sumdV = self.dVidzi		
+		for msg in lyapunovTelegraph:
+			sumdV += msg.dVidzj
+
 		# Constant parameter =================================
 		# This should be initalised at the beginning, however config here for easy tuning
 		self.wThres = 127
@@ -118,7 +148,7 @@ class BLF_Controller:
 		self.wOrbit = 30
 		eps = 5
 		# Control output ====================================
-		w = self.wOrbit + self.gain * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)
+		w = self.wOrbit + self.gain * calc_sigmoid(sumdV[0] * math.cos(self.Theta) + sumdV[1] * math.sin(self.Theta), eps)
 
 		# Output cutoff
 		if(w > self.wThres):
@@ -128,11 +158,8 @@ class BLF_Controller:
 			w = -self.wThres
 			rospy.logwarn("ANGULAR THRESHOLD VIOLATED: %.2f !", w)
 
-		# Constant Heading Velocity
-		self.vConst = 16
 		self.angularVel = w
 		return [self.vConst, self.angularVel]
-
 
 
 	def computeVBLF(self):

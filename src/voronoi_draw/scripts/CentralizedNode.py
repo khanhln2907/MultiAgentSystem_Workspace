@@ -120,12 +120,12 @@ if __name__ == '__main__':
 				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
 				
 				for agent in centralCom._AgentList:	
-					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f dV: [%.4f %.4f] Err: %.2f \n"\
+					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f  Err: %.2f \n"\
 					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
 					agent.VmX, agent.VmY,\
 					agent.TargetX, agent.TargetY,\
 					agent.angularVel, agent.testW,\
-					agent.lastVBLF, agent.dVBLF[0], agent.dVBLF[1], \
+					agent.lastVBLF,\
 					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
 				rospy.loginfo(str)
 				rospy.loginfo(centralCom.adjacentMat)

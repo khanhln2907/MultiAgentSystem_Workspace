@@ -32,7 +32,6 @@ from voronoi_custom import getAdjacentList
 from tip.msg import UnicycleInfoMsg
 from tip.msg import ControlMsg
 from BLF_Controller import *
-from controlAlgo import *
 from VoronoiLib import *
 
 class Centralized_Controller:
@@ -172,154 +171,49 @@ class Centralized_Controller:
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
 		# Update the control input if everything is working fine	
-		else: 
-			# Update BLF State of all agent
-			dVidziList = []
-			lapunovMat = [[None] for i in range(self._nAgent)]
-			controlParam = controlParameter()
-			controlParam.eps = 5
-			controlParam.gain = 3
-			controlParam.P = 3
-			controlParam.Q_2x2 = 5 * np.identity(2)
-			# Compute the partial derivative for each agent
+		else: 			
+			# Compute the Lyapunov partial derivative from each agent
+			lyapunovTelegraphList = []
 			for agentID in range(0, self._nAgent):
-				myAgent = vorPrivateData()
+				# Information of agent <agentID>
+				myAgent = VoronoiPrivateData()
 				myAgent.C = np.array(centroidArr[agentID])
 				myAgent.z = np.array([self._AgentList[agentID].VmX, self._AgentList[agentID].VmY])
 				myAgent.dCi_dzi = 0
-				dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
-				for neighborID in range(0, self._nAgent):
-					if(self.adjacentMat[agentID][neighborID] == 1):
-						adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
-						dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
-													adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-						myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-						dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
-				
-				# Compute the Lyapunov feedback after having the adjacent information
-				#rospy.loginfo(dCi_dzj_list[agentID,:,:,:])
-				[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
-				dVidziList.append(dVidzi)
-				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
 
-			# Compute the control output for all agents
-			for agentID in range(0, self._nAgent):
-				dV = dVidziList[agentID]
+				# Parsed neighbor information
+				telegraph = []
 				for neighborID in range(0, self._nAgent):
-					if(self.adjacentMat[neighborID][agentID] == 1):
-						
-						dV += lapunovMat[neighborID][2][0][agentID]
-				#rospy.loginfo(centroidArr[agentID])
-				self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
-				[v, w] = self._AgentList[agentID].controlBLF(dV)
+					neighborReport = NeighborVoronoiInfo()
+					if(self.adjacentMat[agentID][neighborID] == 1):
+						neighborReport.neighborID = self._AgentList[neighborID].ID
+						neighborReport.vm_coord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
+						neighborReport.com_v1_2d = commonverMat[agentID][neighborID][0]
+						neighborReport.com_v2_2d = commonverMat[agentID][neighborID][1]
+						telegraph.append(neighborReport)
+
+				retTelegraph = self._AgentList[agentID].updateVoronoiInfo(myAgent,telegraph, partitionMasses[agentID], self.bndCoeff)
+				lyapunovTelegraphList.append(retTelegraph)
+
+			#rospy.loginfo(lyapunovTelegraphList)
+			# Perfrom the routing of the telegraph for the feedback of the Lyapunov derivative
+			for agentID in range(0, self._nAgent):
+				myTel = []
+				# Go through the "network" to get my data
+				for j in range(0, self._nAgent):
+					if j is not agentID:
+						for msg in lyapunovTelegraphList[j]:
+							if (msg.neighborID == self._AgentList[agentID].ID): # If the message is for me
+								myTel.append(msg) 	
+				
+				[v, w] = self._AgentList[agentID].updateControlInput(myTel)
 				# Publish the message
 				msg = ControlMsg()
 				msg.ID = self._AgentList[agentID].ID
 				msg.translation = v
 				msg.rotation = w			
 				self.controlInputPublisher.publish(msg)
-
-
-
-	# def updateCoverageRev(self):
-	# 	tmpTessel = []
-	# 	for i in range(0, self._nAgent):
-	# 		tmpTessel.append([self._AgentList[i].VmX, self._AgentList[i].VmY]) 
-
-	# 	pntsArr = np.array(tmpTessel)
-	# 	# Boundary lines of the coverage area. This is still hard coded until now
-	# 	# Get the centroids and the vertices
-	# 	[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pntsArr, self.aMat, self.bVec)
-	# 	[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
-
-	# 	# Return the adjacent matrix in relation to the order of centroid
-	# 	# If the total amount of centroid returns is lower than the total amount of agents
-	# 	# Mission must be terminated. Error detection
-	# 	if(len(centroidArr) != self._nAgent):
-	# 		rospy.logerr("VORONOI CONFIGURATION INVALID. EMERGENCY STOP ACTIVATED")
-	# 		# Send Stop Cmd to each agent
-	# 		for i in range(0, self._nAgent):
-	# 			v = 0
-	# 			w = 0
-	# 			# Publish the message
-	# 			msg = ControlMsg()
-	# 			msg.ID = self._AgentList[i].ID
-	# 			msg.translation = v
-	# 			msg.rotation = w			
-	# 			self.controlInputPublisher.publish(msg)
-	# 	# Update the control input if everything is working fine	
-	# 	else: 
-	# 		# Update BLF State of all agent
-	# 		dVidziList = []
-	# 		lapunovMat = [[None] for i in range(self._nAgent)]
-	# 		controlParam = controlParameter()
-	# 		controlParam.eps = 5
-	# 		controlParam.gain = 3
-	# 		controlParam.P = 3
-	# 		controlParam.Q_2x2 = 5 * np.identity(2)
-	# 		# Compute the partial derivative for each agent
-	# 		for agentID in range(0, self._nAgent):
-	# 			# Information of agent <agentID>
-	# 			myAgent = vorPrivateData()
-	# 			myAgent.C = np.array(centroidArr[agentID])
-	# 			myAgent.z = np.array([self._AgentList[agentID].VmX, self._AgentList[agentID].VmY])
-	# 			myAgent.dCi_dzi = 0
-	# 			dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
-
-	# 			# Parsed neighbor information
-				
-	# 			telegraph = []
-	# 			adjCoord_2d = np.zeros((self._nAgent,2,2))
-	# 			for neighborID in range(0, self._nAgent):
-	# 				neighborReport = NeighborInfo()
-	# 				if(self.adjacentMat[agentID][neighborID] == 1):
-	# 					neighborReport.neighborID = self._AgentList[neighborID].ID
-	# 					neighborReport.vm_coord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
-	# 					neighborReport.com_v1_2d = commonverMat[agentID][neighborID][0]
-	# 					neighborReport.com_v2_2d = commonverMat[agentID][neighborID][1]
-	# 					telegraph.append(neighborReport)
-
-	# 			self._AgentList[agentID].updateVoronoiInfo(myAgent,telegraph)
-	# 					#adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
-	# 					#dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
-	# 					#							adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-	# 					#myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-	# 					#dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
-				
-
-
-
-
-	# 			for neighborID in range(0, self._nAgent):
-	# 				if(self.adjacentMat[agentID][neighborID] == 1):
-	# 					adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
-	# 					dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
-	# 												adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-	# 					myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-	# 					dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
-				
-	# 			# Compute the Lyapunov feedback after having the adjacent information
-	# 			#rospy.loginfo(dCi_dzj_list[agentID,:,:,:])
-	# 			[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
-	# 			dVidziList.append(dVidzi)
-	# 			lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
-
-	# 		# Compute the control output for all agents
-	# 		for agentID in range(0, self._nAgent):
-	# 			dV = dVidziList[agentID]
-	# 			for neighborID in range(0, self._nAgent):
-	# 				if(self.adjacentMat[neighborID][agentID] == 1):
-						
-	# 					dV += lapunovMat[neighborID][2][0][agentID]
-	# 			#rospy.loginfo(centroidArr[agentID])
-	# 			self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
-	# 			[v, w] = self._AgentList[agentID].controlBLF(dV)
-	# 			# Publish the message
-	# 			msg = ControlMsg()
-	# 			msg.ID = self._AgentList[agentID].ID
-	# 			msg.translation = v
-	# 			msg.rotation = w			
-	# 			self.controlInputPublisher.publish(msg)
+	
 
 	def publishDebugInfo(self):
 		msg = CentralizedMsg()
