@@ -46,14 +46,13 @@ class BLF_Controller:
 		# Output
 		self.angularVel = 0
 
-	def updateVM(self, radius):
+	def updateVM(self):
 		# Save it befoe updating new values
 		self.lastVmX = self.VmX
 		self.lastVmY = self.VmY
 		# Calculate the VM ourself so dont need to change the config in cpp file
-		radius = 200 # Using constant orbit Radius for now
-		self.VmX = self.PosX - 200 * math.sin(self.Theta) 
-		self.VmY = self.PosY + 200 * math.cos(self.Theta)
+		self.VmX = self.PosX - self.vConst/self.wOrbit * math.sin(self.Theta) 
+		self.VmY = self.PosY + self.vConst/self.wOrbit * math.cos(self.Theta)
 
 	def updateState(self, data):	
 		self.ID = np.int32(data.packet.TransmitterID)
@@ -62,7 +61,7 @@ class BLF_Controller:
 		self.Theta = np.float32(data.packet.AgentTheta)
 		
 		# Update this internally for centralized controller
-		self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
+		self.updateVM()	# Update the virtual center with radius 200 locally to avoid conflict with another node
 		
 	def updateLyapunov(self, newCVT_2d, V, dV):
 		self.TargetX = newCVT_2d[0]
