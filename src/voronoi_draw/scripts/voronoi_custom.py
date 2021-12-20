@@ -1,9 +1,7 @@
 #!/usr/bin/python
 import numpy as np
 import random, itertools, collections
-import rospy
 import math
-
 
 from scipy.spatial import Delaunay
 from scipy.spatial import ConvexHull
