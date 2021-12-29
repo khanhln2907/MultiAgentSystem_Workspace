@@ -110,10 +110,10 @@ class BLFController:
 	def controlBLF(self, dV):	
 		# Constant parameter =================================
 		# This should be initalised at the beginning, however config here for easy tuning
-		self.wThres = 127
+		self.wThres = 1.5
 		self.vConst = 16
-		self.gain = np.double(30) 
-		self.wOrbit = 30
+		self.gain = np.double(1) 
+		self.wOrbit = 0.5
 		eps = 5
 		# Control output ====================================
 		w = self.wOrbit + self.gain * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)

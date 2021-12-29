@@ -84,7 +84,7 @@ class CentralizedControllerBase:
 	# This method must be defined by the child class to provide the publishing methods to each agent
 	def publishControlMsg(self, ID, v,w):
 		str = "Publish to agent %d, v = %.4f, w = %.4f" %(ID, v, w)
-		print(str)
+		#print(str)
 		#raise NotImplementedError()
 
 	def updateCoverage(self, pntsArr):
@@ -134,6 +134,7 @@ class CentralizedControllerBase:
 				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
 
 			# Compute the control output for all agents
+			controlInput = []
 			for agentID in range(0, self._nAgent):
 				dV = dVidziList[agentID]
 				for neighborID in range(0, self._nAgent):
@@ -143,8 +144,9 @@ class CentralizedControllerBase:
 				self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
 				[v, w] = self._AgentList[agentID].controlBLF(dV)
 				# Publish the message
+				controlInput.append(w)
 				self.publishControlMsg(self._AgentList[agentID].ID, v,w)
-
+			return [controlInput, lapunovMat]
 	# def updateCoverageRev(self):
 	# 	tmpTessel = []
 	# 	for i in range(0, self._nAgent):
