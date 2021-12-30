@@ -80,69 +80,69 @@ class CentralizedControllerBase:
 		#print(str)
 		raise NotImplementedError()
 
-	# def updateCoverage(self, pntsArr):
-	# 	# Boundary lines of the coverage area. This is still hard coded until now
-	# 	# Get the centroids and the vertices
-	# 	[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pntsArr, self.aMat, self.bVec)
-	# 	[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
+	def updateCoverageDep(self, pntsArr):
+		# Boundary lines of the coverage area. This is still hard coded until now
+		# Get the centroids and the vertices
+		[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pntsArr, self.aMat, self.bVec)
+		[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
 
-	# 	# Return the adjacent matrix in relation to the order of centroid
-	# 	# If the total amount of centroid returns is lower than the total amount of agents
-	# 	# Mission must be terminated. Error detection
-	# 	if(len(centroidArr) != self._nAgent):
-	# 		print("VORONOI CONFIGURATION INVALID. EMERGENCY STOP ACTIVATED")
-	# 		#rospy.logerr("VORONOI CONFIGURATION INVALID. EMERGENCY STOP ACTIVATED")
-	# 		# Send Stop Cmd to each agent
-	# 		for agentID in range(0, self._nAgent):
-	# 			self.publishControlMsg(self._AgentList[agentID].ID, 0,0)
+		# Return the adjacent matrix in relation to the order of centroid
+		# If the total amount of centroid returns is lower than the total amount of agents
+		# Mission must be terminated. Error detection
+		if(len(centroidArr) != self._nAgent):
+			print("VORONOI CONFIGURATION INVALID. EMERGENCY STOP ACTIVATED")
+			#rospy.logerr("VORONOI CONFIGURATION INVALID. EMERGENCY STOP ACTIVATED")
+			# Send Stop Cmd to each agent
+			for agentID in range(0, self._nAgent):
+				self.publishControlMsg(self._AgentList[agentID].ID, 0,0)
 
-	# 	# Update the control input if everything is working fine	
-	# 	else: 
-	# 		# Update BLF State of all agent
-	# 		dVidziList = []
-	# 		lapunovMat = [[None] for i in range(self._nAgent)]
-	# 		controlParam = controlParameter()
-	# 		controlParam.eps = 5
-	# 		controlParam.gain = 3
-	# 		controlParam.P = 3
-	# 		controlParam.Q_2x2 = 5 * np.identity(2)
-	# 		# Compute the partial derivative for each agent
-	# 		totVi = 0
-	# 		for agentID in range(0, self._nAgent):
-	# 			myAgent = vorPrivateData()
-	# 			myAgent.C = np.array(centroidArr[agentID])
-	# 			myAgent.z = np.array([self._AgentList[agentID].vm2[0], self._AgentList[agentID].vm2[1]])
-	# 			myAgent.dCi_dzi = 0
-	# 			dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
-	# 			for neighborID in range(0, self._nAgent):
-	# 				if(self.adjacentMat[agentID][neighborID] == 1):
-	# 					adjCoord_2d = np.array([self._AgentList[neighborID].vm2[0], self._AgentList[neighborID].vm2[1]])
-	# 					dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
-	# 												adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
-	# 					myAgent.dCi_dzi += dCi_dzi_AdjacentJ
-	# 					dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
+		# Update the control input if everything is working fine	
+		else: 
+			# Update BLF State of all agent
+			dVidziList = []
+			lapunovMat = [[None] for i in range(self._nAgent)]
+			controlParam = controlParameter()
+			controlParam.eps = 5
+			controlParam.gain = 3
+			controlParam.P = 3
+			controlParam.Q_2x2 = 5 * np.identity(2)
+			# Compute the partial derivative for each agent
+			totVi = 0
+			for agentID in range(0, self._nAgent):
+				myAgent = vorPrivateData()
+				myAgent.C = np.array(centroidArr[agentID])
+				myAgent.z = np.array([self._AgentList[agentID].vm2[0], self._AgentList[agentID].vm2[1]])
+				myAgent.dCi_dzi = 0
+				dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
+				for neighborID in range(0, self._nAgent):
+					if(self.adjacentMat[agentID][neighborID] == 1):
+						adjCoord_2d = np.array([self._AgentList[neighborID].vm2[0], self._AgentList[neighborID].vm2[1]])
+						dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2DCalCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
+													adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
+						myAgent.dCi_dzi += dCi_dzi_AdjacentJ
+						dCi_dzj_list[agentID,neighborID,:,:] = dCi_dzj[:,:]
 				
-	# 			# Compute the Lyapunov feedback after having the adjacent information
-	# 			[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
-	# 			dVidziList.append(dVidzi)
-	# 			lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
-	# 			totVi += Vi
+				# Compute the Lyapunov feedback after having the adjacent information
+				[Vi, dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
+				dVidziList.append(dVidzi)
+				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
+				totVi += Vi
 
-	# 		print("Lyapunov: ", totVi)
-	# 		# Compute the control output for all agents
-	# 		controlInput = []
-	# 		for agentID in range(0, self._nAgent):
-	# 			dV = dVidziList[agentID]
-	# 			for neighborID in range(0, self._nAgent):
-	# 				if(self.adjacentMat[neighborID][agentID] == 1):
+			print("Lyapunov: ", totVi)
+			# Compute the control output for all agents
+			controlInput = []
+			for agentID in range(0, self._nAgent):
+				dV = dVidziList[agentID]
+				for neighborID in range(0, self._nAgent):
+					if(self.adjacentMat[neighborID][agentID] == 1):
 						
-	# 					dV += lapunovMat[neighborID][2][0][agentID]
-	# 			self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
-	# 			[v, w] = self._AgentList[agentID].controlBLF(dV)
-	# 			# Publish the message
-	# 			controlInput.append(w)
-	# 			#self.publishControlMsg(self._AgentList[agentID].ID, v,w)
-	# 		return [controlInput, lapunovMat]
+						dV += lapunovMat[neighborID][2][0][agentID]
+				self._AgentList[agentID].updateLyapunov(centroidArr[agentID], lapunovMat[agentID][0][0], dV)
+				[v, w] = self._AgentList[agentID].controlBLF(dV)
+				# Publish the message
+				controlInput.append(w)
+				#self.publishControlMsg(self._AgentList[agentID].ID, v,w)
+			return [controlInput, lapunovMat]
 	
 	# Compute Voronoi Tessellation for each agent
 	# Perform information routing to each control handle
@@ -205,10 +205,10 @@ class CentralizedControllerBase:
 				myTel = []
 				# Go through the "network" to get my data
 				for j in range(0, self._nAgent):
-					if j is not agentID:
-						for msg in lyapunovTelegraphList[j]:
-							if (msg.neighborID == self._AgentList[agentID].ID): # If the message is for me
-								myTel.append(msg) 	
+					#if j is not agentID:
+					for msg in lyapunovTelegraphList[j]:
+						if (msg.neighborID == self._AgentList[agentID].ID): # If the message is for me
+							myTel.append(msg) 	
 				
 				[v, w] = self._AgentList[agentID].calcControlInput(myTel)
 				# Publish the message

@@ -47,8 +47,9 @@ while 1:
         pntsArr.append(vm2)
 
     #print("Points Collected:", pntsArr) 
-    totV, controlInput = com.updateCoverage()
+    #controlInput, _ = com.updateCoverageDep(pntsArr)
 
+    totV, controlInput = com.updateCoverage()
     print(totV)
     
     for i in range(config.nAgent):
