@@ -7,6 +7,8 @@ import numpy as np
 from CentralizedControllerBase import *
 from UnicycleAgent import *
 
+
+
 np.random.seed(0)
 
 class SimParam:
@@ -21,8 +23,7 @@ class SimParam:
 
 config = SimParam()
 
-com = CentralizedControllerBase()
-com.begin(4, config.boundaries)
+
 
 
 agentList = []
@@ -31,8 +32,13 @@ rXY = 2000;
 nAgent = 4
 
 for i in range(config.nAgent):
-    pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), 0])
-    agentList.append(UnicycleAgent(config.dt, pose3))
+    pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
+    agent = SimUnicycleCoverageAgent(config.dt, pose3)
+    agent.begin(1, 2, 1, 2, config.boundaries)
+    agentList.append(agent)
+
+com = CentralizedControllerBase(agentList, config.boundaries)
+#com.begin(4, config.boundaries)
 
 while 1:
     pntsArr = []

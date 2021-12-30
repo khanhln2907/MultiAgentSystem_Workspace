@@ -14,9 +14,10 @@ from voronoi_custom import getAdjacentList
 from BLFController import *
 from controlAlgo import *
 from VoronoiLib import *
+from UnicycleAgent import UnicycleCoverageAgent
 
 class CentralizedControllerBase:
-	def __init__(self):
+	def __init__(self, agentList, bndPnt):
 		# Agent information
 		self._nAgent = 0
 		self._cntRegisteredAgent = 0
@@ -35,8 +36,8 @@ class CentralizedControllerBase:
 		# Variable for logging Msg
 		self.cntMsg = 0
 
-	def begin(self,nAgents, bndPnt):
-		self._nAgent = nAgents
+		self._AgentList = agentList
+		self._nAgent = len(self._AgentList)
 		# Initialize the list of agents information with the desired settings
 		[self.aMat, self.bVec] = getConvexBndMatrix(bndPnt)
 		self.bndCoeff = np.zeros([len(self.bVec),3])
@@ -44,48 +45,40 @@ class CentralizedControllerBase:
 			self.bndCoeff[j,0] = self.aMat[j,0]
 			self.bndCoeff[j,1] = self.aMat[j,1]
 			self.bndCoeff[j,2] = self.bVec[j]
-		
-		for i in range(self._nAgent):
-			agentHandler = BLFController()
-			agentHandler.begin(1, 2, 1, 2, bndPnt)
-			self._AgentList.append(agentHandler)
-		
-		#rospy.loginfo("Init list of %d agents", self._nAgent)
 		print("Init list of %d agents", self._nAgent)
-
-
+	
 
 	# Update all the subscribed topic from ROS
-	def updateState(self, data):
-		# SENSORS - State Feedback
-		# Obtain the new data from agents and assign into the controller lists
-		# Find the registered Agent ID and assign the values
-		isAssigned = False
-		for agent in self._AgentList:
-			if ((agent.ID == -1) or (agent.ID == np.int32(data.packet.TransmitterID))):
-				# Assign new agent
-				if(agent.ID == -1):
-					self._cntRegisteredAgent += 1
-				# Update the state
-				agent.updateState(data)
-				# Check all agents are registered
-				isAssigned = True
-				break
+	# def updateState(self, data):
+	# 	# SENSORS - State Feedback
+	# 	# Obtain the new data from agents and assign into the controller lists
+	# 	# Find the registered Agent ID and assign the values
+	# 	isAssigned = False
+	# 	for agent in self._AgentList:
+	# 		if ((agent.ID == -1) or (agent.ID == np.int32(data.packet.TransmitterID))):
+	# 			# Assign new agent
+	# 			if(agent.ID == -1):
+	# 				self._cntRegisteredAgent += 1
+	# 			# Update the state
+	# 			agent.updateState(data)
+	# 			# Check all agents are registered
+	# 			isAssigned = True
+	# 			break
 
-		if(isAssigned == False):
-			#rospy.loginfo("List is full ! New Agent detected")
-			print("List is full ! New Agent detected")
+	# 	if(isAssigned == False):
+	# 		#rospy.loginfo("List is full ! New Agent detected")
+	# 		print("List is full ! New Agent detected")
 		
-		# CONTROL METHOD 
-		# Start only all agents registered for the agentlist
-		if(self._cntRegisteredAgent == self._nAgent):
-			self.startFlag = True
+	# 	# CONTROL METHOD 
+	# 	# Start only all agents registered for the agentlist
+	# 	if(self._cntRegisteredAgent == self._nAgent):
+	# 		self.startFlag = True
 
 	# This method must be defined by the child class to provide the publishing methods to each agent
 	def publishControlMsg(self, ID, v,w):
-		str = "Publish to agent %d, v = %.4f, w = %.4f" %(ID, v, w)
+		#str = "Publish to agent %d, v = %.4f, w = %.4f" %(ID, v, w)
 		#print(str)
-		#raise NotImplementedError()
+		raise NotImplementedError()
 
 	def updateCoverage(self, pntsArr):
 		# Boundary lines of the coverage area. This is still hard coded until now
@@ -118,12 +111,12 @@ class CentralizedControllerBase:
 			for agentID in range(0, self._nAgent):
 				myAgent = vorPrivateData()
 				myAgent.C = np.array(centroidArr[agentID])
-				myAgent.z = np.array([self._AgentList[agentID].VmX, self._AgentList[agentID].VmY])
+				myAgent.z = np.array([self._AgentList[agentID].vm2[0], self._AgentList[agentID].vm2[1]])
 				myAgent.dCi_dzi = 0
 				dCi_dzj_list = np.zeros((self._nAgent,self._nAgent,2,2))
 				for neighborID in range(0, self._nAgent):
 					if(self.adjacentMat[agentID][neighborID] == 1):
-						adjCoord_2d = np.array([self._AgentList[neighborID].VmX, self._AgentList[neighborID].VmY])
+						adjCoord_2d = np.array([self._AgentList[neighborID].vm2[0], self._AgentList[neighborID].vm2[1]])
 						dCi_dzi_AdjacentJ, dCi_dzj = Voronoi2D_calCVTPartialDerivative(myAgent.z, myAgent.C, partitionMasses[agentID],\
 													adjCoord_2d, commonverMat[agentID][neighborID][0], commonverMat[agentID][neighborID][1])
 						myAgent.dCi_dzi += dCi_dzi_AdjacentJ
@@ -148,8 +141,9 @@ class CentralizedControllerBase:
 				[v, w] = self._AgentList[agentID].controlBLF(dV)
 				# Publish the message
 				controlInput.append(w)
-				self.publishControlMsg(self._AgentList[agentID].ID, v,w)
+				#self.publishControlMsg(self._AgentList[agentID].ID, v,w)
 			return [controlInput, lapunovMat]
+	
 	# def updateCoverageRev(self):
 	# 	tmpTessel = []
 	# 	for i in range(0, self._nAgent):

@@ -74,7 +74,6 @@ def dCiy_dzjy_func(t, v1y, v2y, zjy, dZiZj, dqTodtParam):
 def Voronoi2D_calCVTPartialDerivative(thisCoord_2d, thisCVT_2d, mVi, adjCoord_2d, vertex1_2d, vertex2_2d):
     # Function definition for partial derivative
     distanceZiZj = math.sqrt((thisCoord_2d[0] - adjCoord_2d[0])**2 + (thisCoord_2d[1] - adjCoord_2d[1])**2)
-   
     # Factorization of dq = param * dt for line integration
     v1x = vertex1_2d[0]
     v2x = vertex2_2d[0]
