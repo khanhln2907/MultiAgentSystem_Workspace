@@ -1,21 +1,6 @@
 from VoronoiLib import *
+from CoverageInterfaces import *
 
-class vorAgentData:
-    C = np.array([0, 0])
-    z = np.array([0, 0])
-
-class vorPrivateData(vorAgentData):
-    dCi_dzi = grad_2d(np.array([[0, 0], [0, 0]]))
-
-class vorNeighborData(vorAgentData):
-    dCj_dzi = grad_2d(np.array([[0, 0], [0, 0]]))
-    
-
-class controlParameter:
-    eps = 0
-    P = 1
-    Q_2x2 = np.array([[0, 0], [0, 0]])
-    gain = 1
 
 def Voronoi2DCaldVdz(vorPrivateData, dCjdzi_Arr, boundaryCoeff, controlParameter):
     nNeighbor = len(dCjdzi_Arr)

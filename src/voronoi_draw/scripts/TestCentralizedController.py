@@ -4,8 +4,8 @@ from numpy.core.numeric import identity
 sys.path.append('C:\\Users\\khanh\\Desktop\\Workspace\\MultiAgentSystem_Workspace\\voronoi_draw\\scripts')
 
 import numpy as np
-from CentralizedControllerBase import *
-from UnicycleAgent import *
+from CentralizedControllerBase import CentralizedControllerBase
+from Agent import SimUnicycleCoverageAgent
 
 
 
@@ -46,11 +46,11 @@ while 1:
         _, vm2 = agentList[i].getPose()
         pntsArr.append(vm2)
 
-    #print("Points Collected:", pntsArr) 
-    #controlInput, _ = com.updateCoverageDep(pntsArr)
-
-    totV, controlInput = com.updateCoverage()
-    print(totV)
+    if 0:
+        controlInput, _ = com.updateCoverageDep(pntsArr)
+    else:
+        totV, controlInput = com.updateCoverage()
+        print(totV)
     
     for i in range(config.nAgent):
         agentList[i].move(config.vConst, controlInput[i], config.wOrbit)

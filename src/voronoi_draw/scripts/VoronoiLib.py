@@ -2,30 +2,7 @@ import math
 import numpy as np
 import scipy.integrate as integrate
 
-class grad_2d:
-    dx_dx = 0
-    dx_dy = 0 
-    dy_dx = 0 
-    dy_dy = 0
 
-    def __init__(self, mat2x2):
-        self.dx_dx = mat2x2[0,0]
-        self.dx_dy = mat2x2[0,1]
-        self.dy_dx = mat2x2[1,0]
-        self.dy_dy = mat2x2[1,1]
-        pass
-
-   
-    def npForm(self):
-        return np.array([[self.dx_dx, self.dx_dy],
-                        [self.dy_dx, self.dy_dy]])
-
-    def __call__(self):
-        return np.array([[self.dx_dx, self.dx_dy],
-                        [self.dy_dx, self.dy_dy]])
-
-    def show(self):
-        print("dCx_dzx", self.dx_dx, "dCx_dzy", self.dx_dy, "dCy_dzx", self.dy_dx, "dCy_dzy", self.dy_dy)
 
 def dq__dZix_n_func(qX, ziX, dZiZj):
     return (qX - ziX) / dZiZj

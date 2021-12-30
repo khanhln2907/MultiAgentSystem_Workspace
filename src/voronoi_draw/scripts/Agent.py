@@ -1,40 +1,23 @@
 import numpy as np
 import math
-from AgentBase import AgentBase
 from voronoi_custom import getConvexBndMatrix 
 from controlAlgo import *
 
-class VoronoiPrivateData():
-    C = np.array([0, 0])
-    z = np.array([0, 0])
-    dCi_dzi = grad_2d(np.array([[0, 0], [0, 0]]))
-    
 
-class ControlParameter:
-    eps = 0
-    P = 1
-    Q_2x2 = np.array([[0, 0], [0, 0]])
-    gain = 1
 
-class NeighborVoronoiInfo:
-	neighborID = 0
-	vm_coord_2d = 0
-	cvt_coord_2d = 0
-	com_v1_2d = 0
-	com_v2_2d = 0
+class AgentBase:
+    ID = -1
 
-class NeighborLyapunoInfo:
-	publisherID = 0
-	neighborID = 0
-	dCidzj = np.zeros([2,2])
-	dVidzj = np.zeros([2,1])		# i is my index, j is the neighbor
+    def __init__(self, ID) -> None:
+        self.ID = ID
+        pass
 
-	def getInfo(self):
-		str = ""
-		str += "i: %d > j: %d.  dVidzj: [%.8f, %.8f] dCidzj: [%.8f ,%.8f; %.8f ,%.8f] \n" %(self.publisherID, self.neighborID,\
-														 self.dVidzj[0], self.dVidzj[1],\
-														self.dCidzj[0,0], self.dCidzj[0,1], self.dCidzj[1,0], self.dCidzj[1,1])
-		return str
+    def move(self):
+        raise NotImplementedError
+
+    def getPose(self):
+        raise NotImplementedError
+
 
 class UnicycleAgent(AgentBase):
     pose3 = np.array([0,0,0])
@@ -96,10 +79,15 @@ class UnicycleCoverageAgent(UnicycleAgent):
     def controlBLF(self, dV):	
         # Constant parameter =================================
         # This should be initalised at the beginning, however config here for easy tuning
-        self.wThres = 1.5
+        # self.wThres = 1.5
+        # self.vConst = 16
+        # self.gain = np.double(1) 
+        # self.wOrbit = 0.5
+        # eps = 5
+        self.wThres = 127
         self.vConst = 16
-        self.gain = np.double(1) 
-        self.wOrbit = 0.5
+        self.gain = np.double(30) 
+        self.wOrbit = 30
         eps = 5
         # Control output ====================================
         w = self.wOrbit + self.gain * calcSigmoid(dV[0] * math.cos(self.pose3[2]) + dV[1] * math.sin(self.pose3[2]), eps)
