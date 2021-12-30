@@ -1,15 +1,18 @@
 import sys
-
+import time
 from numpy.core.numeric import identity
 sys.path.append('C:\\Users\\khanh\\Desktop\\Workspace\\MultiAgentSystem_Workspace\\voronoi_draw\\scripts')
 
 import numpy as np
 from CentralizedControllerBase import CentralizedControllerBase
-from Agent import SimUnicycleCoverageAgent
+from Agent import SimUnicycleCoverageAgent, LoggingInfo
+
+import logging
+name = "Logging/LogSim%d.log" %(time.time())
+logging.basicConfig(filename = name, encoding='utf-8', level=logging.DEBUG)
 
 
-
-np.random.seed(0)
+np.random.seed(6)
 
 class SimParam:
     nAgent = 4
@@ -38,7 +41,6 @@ for i in range(config.nAgent):
     agentList.append(agent)
 
 com = CentralizedControllerBase(agentList, config.boundaries)
-#com.begin(4, config.boundaries)
 
 while 1:
     pntsArr = []
@@ -49,8 +51,17 @@ while 1:
     if 0:
         controlInput, _ = com.updateCoverageDep(pntsArr)
     else:
-        totV, controlInput = com.updateCoverage()
+        totV, controlInput = com.updateCoverage(pntsArr)
         print(totV)
     
+    str = "Logging \n"
+    for i in range(config.nAgent):
+        str += agentList[i].getLogStr()
+        str += "\n"
+    
+    logging.info(str)
+
     for i in range(config.nAgent):
         agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
+
+    

@@ -44,7 +44,7 @@ class NeighborVoronoiInfo:
 	com_v1_2d = 0
 	com_v2_2d = 0
 
-class NeighborLyapunoInfo:
+class NeighborLyapunovInfo:
 	publisherID = 0
 	neighborID = 0
 	dCidzj = np.zeros([2,2])
@@ -58,19 +58,4 @@ class NeighborLyapunoInfo:
 		return str
 
 
-class vorAgentData:
-    C = np.array([0, 0])
-    z = np.array([0, 0])
 
-class vorPrivateData(vorAgentData):
-    dCi_dzi = grad_2d(np.array([[0, 0], [0, 0]]))
-
-class vorNeighborData(vorAgentData):
-    dCj_dzi = grad_2d(np.array([[0, 0], [0, 0]]))
-    
-
-class controlParameter:
-    eps = 0
-    P = 1
-    Q_2x2 = np.array([[0, 0], [0, 0]])
-    gain = 1

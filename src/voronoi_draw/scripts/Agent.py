@@ -2,8 +2,32 @@ import numpy as np
 import math
 from voronoi_custom import getConvexBndMatrix 
 from controlAlgo import *
+import time
 
+class LoggingInfo:
+    ID = 0
+    Timestamp = 0
+    pose3 = np.array([0,0,0])
+    vm2 = np.array([0,0])
+    CVT2 = np.array([0,0])
+    w = 0
+    Vi = 0
 
+    def toString(self):
+        str = "%d, %d, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f" %(self.ID, self.Timestamp, self.pose3[0], self.pose3[1], self.pose3[2], 
+                                                                            self.vm2[0], self.vm2[1], self.CVT2[0], self.CVT2[1], self.w, self.Vi)
+        return str
+
+    def parse(self, str):
+        tmp = str.split(',')
+        self.ID = int(tmp[0])
+        self.Timestamp = int(tmp[1])
+        self.pose3 = np.array([float(tmp[2]), float(tmp[3]), float(tmp[4])])
+        self.vm2 = np.array([float(tmp[5]), float(tmp[6])])
+        self.CVT2 = np.array([float(tmp[7]), float(tmp[8])])
+        self.w = float(tmp[9])
+        self.Vi = float(tmp[10])
+        return self.toString()
 
 class AgentBase:
     ID = -1
@@ -18,6 +42,8 @@ class AgentBase:
     def getPose(self):
         raise NotImplementedError
 
+    def getLog(self):
+        raise NotImplementedError
 
 class UnicycleAgent(AgentBase):
     pose3 = np.array([0,0,0])
@@ -34,8 +60,6 @@ class UnicycleAgent(AgentBase):
         return self.pose3, self.vm2
 
     def updateVM(self, radius):
-		# Calculate the VM ourself so dont need to change the config in cpp file
-		# radius = 200 # Using constant orbit Radius for now
         self.vm2[0] = self.pose3[0] -  radius* math.sin(self.pose3[2]) 
         self.vm2[1] = self.pose3[1] +  radius* math.cos(self.pose3[2])
 
@@ -51,20 +75,14 @@ class UnicycleCoverageAgent(UnicycleAgent):
         self.VBLF = 0
         self.verticesList = 0
         # Target
-        self.CVT = np.array([0,0])
+        self.CVT2 = np.array([0,0])
         # Algorithm Variables
-        self.lastVBLF = 0
-        self.curVBLF = 0 
-        self.dVBLF = 0
-        self.gain = 0
-        self.testW = 0
-        # Constraints
+        # Output
         self.vConst = 0
+        self.angularVel = 0
         self.wThres = 0
         self.wOrbit = 0
-        # Output
-        self.angularVel = 0
-
+        
     def begin(self, controlGain, v0, w0, wCO, boundaries):
         self.gain = controlGain
         self.vConst = v0
@@ -76,41 +94,7 @@ class UnicycleCoverageAgent(UnicycleAgent):
             self.ABnd[j,1] = round(self.ABnd[j,1])
             self.bBnd[j,0] = round(self.bBnd[j,0])
 
-    def controlBLF(self, dV):	
-        # Constant parameter =================================
-        # This should be initalised at the beginning, however config here for easy tuning
-        # self.wThres = 1.5
-        # self.vConst = 16
-        # self.gain = np.double(1) 
-        # self.wOrbit = 0.5
-        # eps = 5
-        self.wThres = 127
-        self.vConst = 16
-        self.gain = np.double(30) 
-        self.wOrbit = 30
-        eps = 5
-        # Control output ====================================
-        w = self.wOrbit + self.gain * calcSigmoid(dV[0] * math.cos(self.pose3[2]) + dV[1] * math.sin(self.pose3[2]), eps)
-        # Output cutoff
-        if(w > self.wThres):
-            w = self.wThres
-            print("ANGULAR THRESHOLD VIOLATED")
-        elif(w < -self.wThres):
-            w = -self.wThres
-            print("ANGULAR THRESHOLD VIOLATED")
-
-        # Constant Heading Velocity
-        self.vConst = 16
-        self.angularVel = w
-        return [self.vConst, self.angularVel]
-
-    def updateLyapunov(self, newCVT_2d, V, dV):
-        self.CVT[0] = newCVT_2d[0]
-        self.CVT[1] = newCVT_2d[1]
-        self.dVBLF = dV
-        self.lastVBLF = V
-        return 0
-
+    
     # Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
     def updateVoronoiInfo(self, myCVT, neighborTelegraph, mVi, bndCoeff):
         # sOME ONETIME CONFIG
@@ -121,8 +105,8 @@ class UnicycleCoverageAgent(UnicycleAgent):
         controlParam.Q_2x2 = 5 * np.identity(2)
 
         # Update the CVT
-        self.dC = myCVT - self.CVT
-        self.CVT = myCVT 
+        self.dC = myCVT - self.CVT2
+        self.CVT2 = myCVT 
         myZ = np.array([self.vm2[0], self.vm2[1]])
 
         nNeighbor = len(neighborTelegraph)
@@ -144,20 +128,18 @@ class UnicycleCoverageAgent(UnicycleAgent):
         myAgent.z = myZ
         myAgent.dCi_dzi = dCi_dzi
         self.dCidzi = dCi_dzi
-        [V, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
-        self.dVBLF = V - self.lastVBLF
-        self.lastVBLF = V
-
+        [self.VBLF, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+       
         dVidzjTelegraph = []
         for i in range(nNeighbor):
-            tmp = NeighborLyapunoInfo()
+            tmp = NeighborLyapunovInfo()
             tmp.publisherID = self.ID
             tmp.neighborID = neighborTelegraph[i].neighborID
             tmp.dCidzj = dCi_dzj_list[i]
             tmp.dVidzj = dVidzj_Arr[i]
             dVidzjTelegraph.append(tmp)
 
-        return V, dVidzjTelegraph
+        return self.VBLF, dVidzjTelegraph
 
     def calcControlInput(self, lyapunovTelegraph):
 		# Save the last sampled record for debugging purpose
@@ -205,7 +187,19 @@ class SimUnicycleCoverageAgent(UnicycleCoverageAgent):
         self.pose3[2] = self.pose3[2] +  self.dt * w
         # Update the virtual mass
         self.updateVM(v//wOrbit)
-        
+
+    def getLogStr(self):
+        report = LoggingInfo()
+        report.ID = self.ID
+        report.Timestamp = time.time_ns()
+        report.pose3 = self.pose3
+        report.Vi = self.VBLF
+        report.w = self.angularVel
+        report.vm2 = self.vm2
+        report.CVT2 = self.CVT2
+
+        return report.toString()
+
 
 def calcSigmoid(x, eps):
 	return x / (abs(x) + eps)

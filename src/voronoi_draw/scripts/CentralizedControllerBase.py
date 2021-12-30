@@ -75,15 +75,9 @@ class CentralizedControllerBase:
 	# Perform information routing to each control handle
 	# Mapping the partial derivative of the Lyapunov Feedback to each adjacent agent
 	# Publish the control input
-	def updateCoverage(self):
-		tmpTessel = []
-		for i in range(0, self._nAgent):
-			tmpTessel.append([self._AgentList[i].vm2[0], self._AgentList[i].vm2[1]]) 
-
-		pntsArr = np.array(tmpTessel)
-		# Boundary lines of the coverage area. This is still hard coded until now
+	def updateCoverage(self, pnts2Arr):
 		# Get the centroids and the vertices
-		[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pntsArr, self.aMat, self.bVec)
+		[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pnts2Arr, self.aMat, self.bVec)
 		[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
 
 		# Return the adjacent matrix in relation to the order of centroid

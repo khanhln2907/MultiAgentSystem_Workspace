@@ -171,8 +171,8 @@ def getAdjacentList(Vertices, centroidArr):
 			elif (cnt == 0):
 				pass
 			else:
-				rospy.logwarn("adjacentList Fault: id: %d vs %d: %d", thisAgent, nextAgent, cnt)
-				rospy.logwarn(Vertices)
+				print("adjacentList Fault: id: %d vs %d: %d", thisAgent, nextAgent, cnt)
+				print(Vertices)
 				
 	return adjMat, vArr
 
