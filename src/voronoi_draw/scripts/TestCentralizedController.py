@@ -11,12 +11,13 @@ np.random.seed(0)
 
 class SimParam:
     nAgent = 4
-    dt = 0.001
+    dt = 0.01
     boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-    wOrbit = 1.4
+    wOrbit = 0.5
     vConst = 16
     P = 3
     EPS_SIGMOID = 5
+    Q_2x2 = 5 * np.identity(2)
 
 config = SimParam()
 
@@ -25,7 +26,6 @@ com.begin(4, config.boundaries)
 
 
 agentList = []
-Q_2x2 = 5 * np.identity(2)
 
 rXY = 2000;      
 nAgent = 4
@@ -47,7 +47,7 @@ while 1:
     for report in lyaRet:
         totV += report[0][0]
 
-    print(totV)
+    #print(totV, controlInput)
     
     for i in range(config.nAgent):
         agentList[i].move(config.vConst, controlInput[i], config.wOrbit)

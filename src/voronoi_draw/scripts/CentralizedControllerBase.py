@@ -114,6 +114,7 @@ class CentralizedControllerBase:
 			controlParam.P = 3
 			controlParam.Q_2x2 = 5 * np.identity(2)
 			# Compute the partial derivative for each agent
+			totVi = 0
 			for agentID in range(0, self._nAgent):
 				myAgent = vorPrivateData()
 				myAgent.C = np.array(centroidArr[agentID])
@@ -132,7 +133,9 @@ class CentralizedControllerBase:
 				[Vi, dVidzi, dVidzj_Arr] = Voronoi2D_cal_dV_dz(myAgent, dCi_dzj_list[agentID,:,:,:], self.bndCoeff, controlParam)
 				dVidziList.append(dVidzi)
 				lapunovMat[agentID] = [[Vi], [dVidzi], [dVidzj_Arr]]
+				totVi += Vi
 
+			print("Lyapunov: ", totVi)
 			# Compute the control output for all agents
 			controlInput = []
 			for agentID in range(0, self._nAgent):

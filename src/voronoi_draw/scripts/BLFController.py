@@ -54,14 +54,15 @@ class BLFController:
 		self.VmX = self.PosX - 200 * math.sin(self.Theta) 
 		self.VmY = self.PosY + 200 * math.cos(self.Theta)
 
-	def updateState(self, data):	
-		self.ID = np.int32(data.packet.TransmitterID)
-		self.PosX = np.float32(data.packet.AgentPosX)
-		self.PosY = np.float32(data.packet.AgentPosY)
-		self.Theta = np.float32(data.packet.AgentTheta)
+
+	# def updateState(self, data):	
+	# 	self.ID = np.int32(data.packet.TransmitterID)
+	# 	self.PosX = np.float32(data.packet.AgentPosX)
+	# 	self.PosY = np.float32(data.packet.AgentPosY)
+	# 	self.Theta = np.float32(data.packet.AgentTheta)
 		
-		# Update this internally for centralized controller
-		self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
+	# 	# Update this internally for centralized controller
+	# 	self.updateVM(200)	# Update the virtual center with radius 200 locally to avoid conflict with another node
 		
 	def updateLyapunov(self, newCVT_2d, V, dV):
 		self.TargetX = newCVT_2d[0]
@@ -117,7 +118,6 @@ class BLFController:
 		eps = 5
 		# Control output ====================================
 		w = self.wOrbit + self.gain * calc_sigmoid(dV[0] * math.cos(self.Theta) + dV[1] * math.sin(self.Theta), eps)
-
 		# Output cutoff
 		if(w > self.wThres):
 			w = self.wThres
@@ -133,18 +133,18 @@ class BLFController:
 
 
 
-	def computeVBLF(self):
-		nBndLines = len(self.bBnd)
-		tmpV = 0
-		for j in range(nBndLines):
-			tmpV += 1 // (self.bBnd[j] - self.ABnd[j][0] * self.VmX + self.ABnd[j][1] * self.VmY)
-		V = tmpV * (math.pow(self.VmX - self.TargetX, 2) + math.pow(self.VmY - self.TargetY, 2)) / 2 
-		return V
+	# def computeVBLF(self):
+	# 	nBndLines = len(self.bBnd)
+	# 	tmpV = 0
+	# 	for j in range(nBndLines):
+	# 		tmpV += 1 // (self.bBnd[j] - self.ABnd[j][0] * self.VmX + self.ABnd[j][1] * self.VmY)
+	# 	V = tmpV * (math.pow(self.VmX - self.TargetX, 2) + math.pow(self.VmY - self.TargetY, 2)) / 2 
+	# 	return V
 
-	def computeSimple(self):
-		w = self.wOrbit + self.gain * np.sign((self.VmX - self.TargetX) * math.cos(self.Theta) 
-							+ (self.VmY - self.TargetY) * math.sin(self.Theta))
-		return w
+	# def computeSimple(self):
+	# 	w = self.wOrbit + self.gain * np.sign((self.VmX - self.TargetX) * math.cos(self.Theta) 
+	# 						+ (self.VmY - self.TargetY) * math.sin(self.Theta))
+	# 	return w
 
 	
 		
