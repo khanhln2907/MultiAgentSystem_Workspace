@@ -33,7 +33,7 @@ nAgent = 4
 
 for i in range(config.nAgent):
     pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
-    agent = SimUnicycleCoverageAgent(config.dt, pose3)
+    agent = SimUnicycleCoverageAgent(i, config.dt, pose3)
     agent.begin(1, 2, 1, 2, config.boundaries)
     agentList.append(agent)
 
@@ -47,13 +47,9 @@ while 1:
         pntsArr.append(vm2)
 
     #print("Points Collected:", pntsArr) 
-    controlInput, lyaRet = com.updateCoverage(pntsArr)
+    totV, controlInput = com.updateCoverage()
 
-    totV = 0
-    for report in lyaRet:
-        totV += report[0][0]
-
-    #print(totV, controlInput)
+    print(totV)
     
     for i in range(config.nAgent):
         agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
