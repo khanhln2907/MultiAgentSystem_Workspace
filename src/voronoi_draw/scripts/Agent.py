@@ -29,11 +29,11 @@ class LoggingInfo:
         self.Vi = float(tmp[10])
         return self.toString()
 
-class AgentBase:
+class AgentBase(object):
     ID = -1
 
-    def __init__(self, ID) -> None:
-        self.ID = ID
+    def __init__(self): #-> None:
+        #self.ID = ID
         pass
 
     def move(self):
@@ -50,8 +50,9 @@ class UnicycleAgent(AgentBase):
     lastPose3 = pose3
     vm2 = np.array([0,0])
 
-    def __init__(self, ID, pose3) -> None:
-        super().__init__(ID)
+    def __init__(self, ID, pose3): # -> None:
+        super(AgentBase, self).__init__()
+        self.ID = ID
         self.pose3 = pose3
         self.vm2 = np.array([pose3[0],pose3[1]])
         print("Agent: ", ID,  self.vm2)
@@ -66,8 +67,8 @@ class UnicycleAgent(AgentBase):
 
 class UnicycleCoverageAgent(UnicycleAgent):
     
-    def __init__(self, ID, pose3) -> None:
-        super().__init__(ID, pose3)
+    def __init__(self, ID, pose3): # -> None:
+        super(UnicycleAgent, self).__init__(ID, pose3)
         
         self.ABnd = 0
         self.bBnd = 0
@@ -105,7 +106,7 @@ class UnicycleCoverageAgent(UnicycleAgent):
         controlParam.Q_2x2 = 5 * np.identity(2)
 
         # Update the CVT
-        self.dC = myCVT - self.CVT2
+        #self.dC = myCVT - self.CVT2
         self.CVT2 = myCVT 
         myZ = np.array([self.vm2[0], self.vm2[1]])
 
@@ -173,10 +174,42 @@ class UnicycleCoverageAgent(UnicycleAgent):
         self.angularVel = w
         return [self.vConst, self.angularVel]
 
+class ROSUnicycleCoverageAgent(UnicycleCoverageAgent):
+    def __init__(self, ID, pose3): # -> None:
+        super(UnicycleCoverageAgent, self).__init__(pose3)
+
+    def updatePose(self, pose3, v, wOrbit):
+        self.lastPose3 = self.pose3
+        self.pose3[0] = pose3[0] 
+        self.pose3[1] = pose3[1] 
+        self.pose3[2] = pose3[2] 
+        # Update the virtual mass
+        self.updateVM(v//wOrbit)
+
+    def command(self, v, w):  
+        self.lastPose3 = self.pose3
+        self.pose3[0] = self.pose3[0] +  self.dt * (v * math.cos(self.pose3[2]))
+        self.pose3[1] = self.pose3[1] +  self.dt * (v * math.sin(self.pose3[2]))
+        self.pose3[2] = self.pose3[2] +  self.dt * w
+        # Update the virtual mass
+        self.updateVM(v//wOrbit)
+
+    def getLogStr(self):
+        report = LoggingInfo()
+        report.ID = self.ID
+        report.Timestamp = time.time()
+        report.pose3 = self.pose3
+        report.Vi = self.VBLF
+        report.w = self.angularVel
+        report.vm2 = self.vm2
+        report.CVT2 = self.CVT2
+
+        return report.toString()
+
 class SimUnicycleCoverageAgent(UnicycleCoverageAgent):
     dt = 0
-    def __init__(self, ID, dt, pose3) -> None:
-        super().__init__(ID, pose3)
+    def __init__(self, ID, dt, pose3): # -> None:
+        super(UnicycleCoverageAgent, self).__init__(ID, pose3)
         self.dt = dt
 
 
@@ -191,7 +224,7 @@ class SimUnicycleCoverageAgent(UnicycleCoverageAgent):
     def getLogStr(self):
         report = LoggingInfo()
         report.ID = self.ID
-        report.Timestamp = time.time_ns()
+        report.Timestamp = time.time()
         report.pose3 = self.pose3
         report.Vi = self.VBLF
         report.w = self.angularVel

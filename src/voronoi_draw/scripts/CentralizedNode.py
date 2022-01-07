@@ -32,8 +32,6 @@ from tip.msg import ControlMsg
 from BLF_Controller import *
 from Centralized_Controller import *
 
-# List handler to carry the information of the user
-centralCom = Centralized_Controller()
 
 # Update the state into the Voronoi Handler internally, the data will be used to comput the Tesselations
 def updateAgentInfo(data):
@@ -85,50 +83,126 @@ def drawback():
 	
 
 
+# if __name__ == '__main__':
+
+# 	bridge = CvBridge()
+# 	rospy.init_node('stream_voronoi')
+# 	rate = rospy.Rate(15)
+# 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
+
+# 	N_AGENT = 4
+# 	centralCom.begin(N_AGENT, 0, 0, 0)
+
+# 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+# 	Info5 = rospy.Subscriber('/wu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+# 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+# 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+	
+# 	while not rospy.is_shutdown():
+
+		
+# 		# Execute if the central node is in operating state
+# 		if(centralCom.startFlag == True):
+# 			tic = time.time()
+# 			centralCom.updateCoverage()
+# 			centralCom.publishDebugInfo()
+# 			# Capture execution time
+# 			toc = time.time() - tic
+
+# 			# Print with low frequency for debugging
+# 			if((time.time() - centralCom.lastPrintTime) * 1000 > 50):
+# 				sumV = 0
+# 				for agent in centralCom._AgentList:
+# 					sumV += agent.lastVBLF
+# 				str = "\n"
+# 				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
+				
+# 				for agent in centralCom._AgentList:	
+# 					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f dV: [%.4f %.4f] Err: %.2f \n"\
+# 					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
+# 					agent.VmX, agent.VmY,\
+# 					agent.TargetX, agent.TargetY,\
+# 					agent.angularVel, agent.testW,\
+# 					agent.lastVBLF, agent.dVBLF[0], agent.dVBLF[1], \
+# 					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
+# 				rospy.loginfo(str)
+# 				rospy.loginfo(centralCom.adjacentMat)
+# 				centralCom.lastPrintTime = time.time()
+# 		# ROS routine
+# 		rate.sleep()
+
+
+import numpy as np
+from CentralizedControllerBase import CentralizedControllerBase
+from Agent import SimUnicycleCoverageAgent, LoggingInfo
+import logging
+import sys
+sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
+
+np.random.seed(6)
+
+def updateAgentInfo(data):
+	centralCom.updateState(data)
+
+class SimParam:
+    nAgent = 4
+    dt = 0.01
+    boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
+    wOrbit = 0.5
+    vConst = 16
+    P = 3
+    EPS_SIGMOID = 5
+    Q_2x2 = 5 * np.identity(2)
+	
 if __name__ == '__main__':
 
+	# Declaration of ROS nodes
 	bridge = CvBridge()
 	rospy.init_node('stream_voronoi')
 	rate = rospy.Rate(15)
 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
 
-	N_AGENT = 4
-	centralCom.begin(N_AGENT, 0, 0, 0)
-
 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info5 = rospy.Subscriber('/wu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-	
-	while not rospy.is_shutdown():
-
 		
-		# Execute if the central node is in operating state
-		if(centralCom.startFlag == True):
-			tic = time.time()
-			centralCom.updateCoverage()
-			centralCom.publishDebugInfo()
-			# Capture execution time
-			toc = time.time() - tic
+	# These are logged by python Logging module, no ROS
+	name = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
+	logging.basicConfig(filename = name, encoding='utf-8', level=logging.DEBUG)
 
-			# Print with low frequency for debugging
-			if((time.time() - centralCom.lastPrintTime) * 1000 > 50):
-				sumV = 0
-				for agent in centralCom._AgentList:
-					sumV += agent.lastVBLF
-				str = "\n"
-				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
-				
-				for agent in centralCom._AgentList:	
-					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f dV: [%.4f %.4f] Err: %.2f \n"\
-					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
-					agent.VmX, agent.VmY,\
-					agent.TargetX, agent.TargetY,\
-					agent.angularVel, agent.testW,\
-					agent.lastVBLF, agent.dVBLF[0], agent.dVBLF[1], \
-					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
-				rospy.loginfo(str)
-				rospy.loginfo(centralCom.adjacentMat)
-				centralCom.lastPrintTime = time.time()
-		# ROS routine
-		rate.sleep()
+	# Initialize the simulation's parameters
+	config = SimParam()
+	agentList = []
+	rXY = 2000;      
+	nAgent = 4
+
+	for i in range(config.nAgent):
+		pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
+		agent = SimUnicycleCoverageAgent(i, config.dt, pose3)
+		agent.begin(1, 2, 1, 2, config.boundaries)
+		agentList.append(agent)
+
+	com = CentralizedControllerBase(agentList, config.boundaries)
+
+	while not rospy.is_shutdown():
+		# Get the pose from each agent's nodes
+		pntsArr = []
+		for i in range(config.nAgent):
+			_, vm2 = agentList[i].getPose()
+			pntsArr.append(vm2)
+
+		# Compute the centralized controller and update the actual states
+		totV, controlInput = com.updateCoverage(pntsArr)
+		print(totV)
+		
+		# Logging routines
+		str = "Logging \n"
+		for i in range(config.nAgent):
+			str += agentList[i].getLogStr()
+			str += "\n"	
+		logging.info(str)
+
+		# Send the control output to each agent
+		for i in range(config.nAgent):
+			agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
