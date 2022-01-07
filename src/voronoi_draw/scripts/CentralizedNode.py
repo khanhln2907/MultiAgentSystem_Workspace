@@ -38,6 +38,7 @@ sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
 
 # These are logged by python Logging module, no ROS
 import logging
+from CoverageInterfaces import *
 logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
 logging.basicConfig(filename = logFileName, encoding='utf-8', level=logging.DEBUG)
 
@@ -74,7 +75,7 @@ def updateAgentInfo(data):
 			
 			# Update the new pose
 			pose3 = np.array([np.float32(data.packet.AgentPosX), np.float32(data.packet.AgentPosY), np.float32(data.packet.AgentTheta)])
-			agent.updatePose(pose3, config.vConst, config.wOrbit)
+			agent.updatePose(pose3, config.radius)
 			# Check all agents are registered
 			isAssigned = True
 			break
@@ -110,98 +111,53 @@ def drawback():
 				rgb_addline = bridge.cv2_to_imgmsg(cv2.flip(rgb,1), 'rgb8')
 				dynamic_painting_pub.publish(rgb_addline)
 
-	
-
-
-# if __name__ == '__main__':
-
-# 	bridge = CvBridge()
-# 	rospy.init_node('stream_voronoi')
-# 	rate = rospy.Rate(15)
-# 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
-
-# 	N_AGENT = 4
-# 	centralCom.begin(N_AGENT, 0, 0, 0)
-
-# 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-# 	Info5 = rospy.Subscriber('/wu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-# 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-# 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-	
-# 	while not rospy.is_shutdown():
-
-		
-# 		# Execute if the central node is in operating state
-# 		if(centralCom.startFlag == True):
-# 			tic = time.time()
-# 			centralCom.updateCoverage()
-# 			centralCom.publishDebugInfo()
-# 			# Capture execution time
-# 			toc = time.time() - tic
-
-# 			# Print with low frequency for debugging
-# 			if((time.time() - centralCom.lastPrintTime) * 1000 > 50):
-# 				sumV = 0
-# 				for agent in centralCom._AgentList:
-# 					sumV += agent.lastVBLF
-# 				str = "\n"
-# 				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
-				
-# 				for agent in centralCom._AgentList:	
-# 					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f dV: [%.4f %.4f] Err: %.2f \n"\
-# 					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
-# 					agent.VmX, agent.VmY,\
-# 					agent.TargetX, agent.TargetY,\
-# 					agent.angularVel, agent.testW,\
-# 					agent.lastVBLF, agent.dVBLF[0], agent.dVBLF[1], \
-# 					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
-# 				rospy.loginfo(str)
-# 				rospy.loginfo(centralCom.adjacentMat)
-# 				centralCom.lastPrintTime = time.time()
-# 		# ROS routine
-# 		rate.sleep()
-
-def fix_logging(level=logging.WARNING):
-    console = logging.StreamHandler()
-    console.setLevel(level)
-    logging.getLogger('').addHandler(console)
-    formatter = logging.Formatter('%(levelname)-8s:%(name)-12s: %(message)s')
-    console.setFormatter(formatter)
-    logging.getLogger('').addHandler(console)
-
-
-
 
 class SimParam:
 	nAgent = 4
 	SIM = 0
 	dt = 0.01
 	boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-	wOrbit = 0.5
-	vConst = 16
-	P = 3
-	EPS_SIGMOID = 5
-	Q_2x2 = 5 * np.identity(2)
+	vConst = 16.0
+	P = 1
+	EPS_SIGMOID = 2.0
+	Q_2x2 = 1.0 * np.identity(2)
+	wOrbit = 20
+	wThres = 127
+	gain = 60
+	radius = 440
+
 
 # Initialize the simulation's parameters
-np.random.seed(6)
+np.random.seed(2)
 config = SimParam()
 
 cntRegisteredROSAgent = 0
 
 agentList = []  
+# SOME ONETIME CONFIG
+controlParam = ControlParameter()
+controlParam.eps = config.EPS_SIGMOID
+controlParam.gain = config.gain
+controlParam.P = config.P
+controlParam.Q_2x2 = config.Q_2x2
+controlParam.wOrbit = config.wOrbit
+controlParam.vConst = config.vConst
+controlParam.wThres = config.wThres
+
 for i in range(config.nAgent):
 	if(config.SIM):
 		rXY = 2000;    
 		pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
-		agent = SimUnicycleCoverageAgent(-1, config.dt, pose3)
+		agent = SimUnicycleCoverageAgent(i, config.dt, pose3)
 		agent.begin(1, 2, 1, 2, config.boundaries)
+		agent.setParameter(controlParam)
 		agentList.append(agent)
 		pass
 	else:
 		pose3 = np.float32(np.array([0.0, 0.0, 0.0]))
 		agent = ROSUnicycleCoverageAgent(-1, pose3)
 		agent.begin(1, 2, 1, 2, config.boundaries)
+		agent.setParameter(controlParam)
 		agentList.append(agent)
 com = CentralizedControllerBase(agentList, config.boundaries)
 
@@ -209,7 +165,7 @@ if __name__ == '__main__':
 	# Declaration of ROS nodes
 	bridge = CvBridge()
 	rospy.init_node('stream_voronoi')
-	rate = rospy.Rate(15)
+	rate = rospy.Rate(1000)
 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
 
 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
@@ -234,6 +190,7 @@ if __name__ == '__main__':
 
 			# Compute the centralized controller and update the actual states
 			totV, controlInput = com.updateCoverage(pntsArr)
+			print(totV)
 
 			# Logging routines
 			str = "Logging \n"
@@ -248,8 +205,11 @@ if __name__ == '__main__':
 				if(config.SIM):
 					agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
 				else:
+					#agentList[i].command(16.0, 20, Publisher)
 					agentList[i].command(config.vConst, controlInput[i], Publisher)
 
+		if(not config.SIM):
+			rate.sleep()
 
 
 

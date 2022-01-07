@@ -3,7 +3,7 @@ from Agent import LoggingInfo
 import matplotlib.pyplot as plt
 
 class TimeSeries: 
-    def __init__(self) -> None:
+    def __init__(self):
         self.cnt = 0
         self.samples = [None for i in range(1000000)]
         self.ID = []
@@ -42,7 +42,8 @@ for i in range(NAGENT):
     logHandles.append(h)
 
 logHandles = list(logHandles)
-file = "Logging\LogSim1640864364.log"
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641577278.log" 
+REAL = 1
 
 a0 = TimeSeries()
 a1 = TimeSeries()
@@ -61,7 +62,19 @@ for line in lines:
         tmp = LoggingInfo()
         tmp.parse(line)
         id = tmp.ID
-        logHandles[id].addSample(id, tmp)
+        if(REAL):
+            if(id == 20003):
+                logHandles[0].addSample(id, tmp)
+            elif(id == 20005):
+                logHandles[1].addSample(id, tmp)
+            elif(id == 20006):
+                logHandles[2].addSample(id, tmp)
+            elif(id == 20007):
+                logHandles[3].addSample(id, tmp)
+            else:
+                print("UNDEFINED PAGENT ID", id)
+        else:          
+            logHandles[id].addSample(id, tmp)
 
 sumV = 0
 for handle in logHandles:
@@ -72,8 +85,8 @@ plt.plot(range(0, handle.cnt), sumV)
 
 fig1, ax1 = plt.subplots()
 for handle in logHandles:
-    ax1.plot(handle.vm2[:,0], handle.vm2[:,1], '*')
-    ax1.plot(handle.pose3[:,0], handle.pose3[:,1], '.', color = 'blue')
+    ax1.plot(handle.vm2[:,0], handle.vm2[:,1], 'o', color = 'green')
+    ax1.plot(handle.pose3[:,0], handle.pose3[:,1], 'x', color = 'blue')
     ax1.plot(handle.CVT2[:,0], handle.CVT2[:,1], 'o', color='red')
 ax1.set_xlim([20, 4000])
 ax1.set_ylim([20, 2800])

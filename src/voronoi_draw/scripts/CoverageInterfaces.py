@@ -32,10 +32,13 @@ class VoronoiPrivateData():
     
 
 class ControlParameter:
-    eps = 0
-    P = 1
+    eps = 1.0
+    P = 1.0
     Q_2x2 = np.array([[0, 0], [0, 0]])
     gain = 1
+    wOrbit = 0.0
+    vConst = 0.0
+    wThres = 0.9
 
 class NeighborVoronoiInfo:
 	neighborID = 0

@@ -78,12 +78,11 @@ class UnicycleCoverageAgent(UnicycleAgent):
         # Target
         self.CVT2 = np.array([0,0])
         # Algorithm Variables
-        # Output
-        self.vConst = 0
-        self.angularVel = 0
-        self.wThres = 0
-        self.wOrbit = 0
-        
+        self.controlParam = 0
+
+    def setParameter(self, param):
+        self.controlParam = param
+
     def begin(self, controlGain, v0, w0, wCO, boundaries):
         self.gain = controlGain
         self.vConst = v0
@@ -98,13 +97,6 @@ class UnicycleCoverageAgent(UnicycleAgent):
     
     # Obain the new Voronoi information and return the partial derivatives / or Lyapuno feedback for adjacent agents
     def updateVoronoiInfo(self, myCVT, neighborTelegraph, mVi, bndCoeff):
-        # sOME ONETIME CONFIG
-        controlParam = ControlParameter()
-        controlParam.eps = 5
-        controlParam.gain = 3
-        controlParam.P = 3
-        controlParam.Q_2x2 = 5 * np.identity(2)
-
         # Update the CVT
         #self.dC = myCVT - self.CVT2
         self.CVT2 = myCVT 
@@ -129,7 +121,7 @@ class UnicycleCoverageAgent(UnicycleAgent):
         myAgent.z = myZ
         myAgent.dCi_dzi = dCi_dzi
         self.dCidzi = dCi_dzi
-        [self.VBLF, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, controlParam)
+        [self.VBLF, self.dVidzi, dVidzj_Arr] = Voronoi2DCaldVdz(myAgent, dCi_dzj_list, bndCoeff, self.controlParam)
        
         dVidzjTelegraph = []
         for i in range(nNeighbor):
@@ -150,41 +142,32 @@ class UnicycleCoverageAgent(UnicycleAgent):
         for msg in lyapunovTelegraph:
             sumdV += msg.dVidzj
 
-        # Constant parameter =================================
-        # This should be initalised at the beginning, however config here for easy tuning
-        # self.wThres = 127
-        # self.vConst = 16
-        # self.gain = np.double(30) 
-        # self.wOrbit = 30
-        # eps = 5
-        self.wThres = 1.5
-        self.vConst = 16
-        self.gain = np.double(1) 
-        self.wOrbit = 0.5
-        eps = 5
         # Control output ====================================
-        w = self.wOrbit + self.gain * calcSigmoid(sumdV[0] * math.cos(self.pose3[2]) + sumdV[1] * math.sin(self.pose3[2]), eps)
+        w = self.controlParam.wOrbit +\
+            self.controlParam.gain * calcSigmoid(sumdV[0] * math.cos(self.pose3[2]) + sumdV[1] * math.sin(self.pose3[2]), self.controlParam.eps)
 
         # Output cutoff
-        if(w > self.wThres):
+        if(w > self.controlParam.wThres):
+            print("CONTROL SATURATION VIOLATED")
             w = self.wThres
-        elif(w < -self.wThres):
+        elif(w < -self.controlParam.wThres):
+            print("CONTROL SATURATION VIOLATED")
             w = -self.wThres
 
         self.angularVel = w
-        return [self.vConst, self.angularVel]
+        return [self.controlParam.vConst, self.angularVel]
 
 class ROSUnicycleCoverageAgent(UnicycleCoverageAgent):
     def __init__(self, ID, pose3): # -> None:
         super(UnicycleCoverageAgent, self).__init__(ID, pose3)
 
-    def updatePose(self, pose3, v, wOrbit):
+    def updatePose(self, pose3, radius):
         self.lastPose3 = self.pose3
         self.pose3[0] = pose3[0] 
         self.pose3[1] = pose3[1] 
         self.pose3[2] = pose3[2] 
         # Update the virtual mass
-        self.updateVM(v//wOrbit)
+        self.updateVM(radius) # the theoretical radius is vConst // wOribt
 
     def command(self, v, w, publishHandle):  
         # Publish the message
@@ -197,7 +180,7 @@ class ROSUnicycleCoverageAgent(UnicycleCoverageAgent):
     def getLogStr(self):
         report = LoggingInfo()
         report.ID = self.ID
-        report.Timestamp = time.time()
+        report.Timestamp = round(time.time()*1000)
         report.pose3 = self.pose3
         report.Vi = self.VBLF
         report.w = self.angularVel
