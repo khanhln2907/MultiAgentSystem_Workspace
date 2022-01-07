@@ -171,8 +171,9 @@ def getAdjacentList(Vertices, centroidArr):
 			elif (cnt == 0):
 				pass
 			else:
-				print("adjacentList Fault: id: %d vs %d: %d", thisAgent, nextAgent, cnt)
-				print(Vertices)
+				str = "adjacentList Fault: id: %d vs %d: %d" % (thisAgent, nextAgent, cnt)
+				print(str)
+				#print(Vertices)
 				
 	return adjMat, vArr
 

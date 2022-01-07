@@ -3,11 +3,12 @@ import math
 from voronoi_custom import getConvexBndMatrix 
 from controlAlgo import *
 import time
+from tip.msg import ControlMsg
 
 class LoggingInfo:
     ID = 0
     Timestamp = 0
-    pose3 = np.array([0,0,0])
+    pose3 = np.float32(np.array([0,0,0]))
     vm2 = np.array([0,0])
     CVT2 = np.array([0,0])
     w = 0
@@ -55,7 +56,6 @@ class UnicycleAgent(AgentBase):
         self.ID = ID
         self.pose3 = pose3
         self.vm2 = np.array([pose3[0],pose3[1]])
-        print("Agent: ", ID,  self.vm2)
 
     def getPose(self):
         return self.pose3, self.vm2
@@ -176,7 +176,7 @@ class UnicycleCoverageAgent(UnicycleAgent):
 
 class ROSUnicycleCoverageAgent(UnicycleCoverageAgent):
     def __init__(self, ID, pose3): # -> None:
-        super(UnicycleCoverageAgent, self).__init__(pose3)
+        super(UnicycleCoverageAgent, self).__init__(ID, pose3)
 
     def updatePose(self, pose3, v, wOrbit):
         self.lastPose3 = self.pose3
@@ -186,13 +186,13 @@ class ROSUnicycleCoverageAgent(UnicycleCoverageAgent):
         # Update the virtual mass
         self.updateVM(v//wOrbit)
 
-    def command(self, v, w):  
-        self.lastPose3 = self.pose3
-        self.pose3[0] = self.pose3[0] +  self.dt * (v * math.cos(self.pose3[2]))
-        self.pose3[1] = self.pose3[1] +  self.dt * (v * math.sin(self.pose3[2]))
-        self.pose3[2] = self.pose3[2] +  self.dt * w
-        # Update the virtual mass
-        self.updateVM(v//wOrbit)
+    def command(self, v, w, publishHandle):  
+        # Publish the message
+        msg = ControlMsg()
+        msg.ID = self.ID
+        msg.translation = v
+        msg.rotation = w			
+        publishHandle.publish(msg)
 
     def getLogStr(self):
         report = LoggingInfo()

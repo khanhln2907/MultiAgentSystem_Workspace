@@ -29,14 +29,17 @@ from voronoi_custom import voronoi
 from voronoi_custom import getConvexBndMatrix 
 from tip.msg import UnicycleInfoMsg
 from tip.msg import ControlMsg
-from BLF_Controller import *
-from Centralized_Controller import *
 
+import numpy as np
+from CentralizedControllerBase import CentralizedControllerBase
+from Agent import SimUnicycleCoverageAgent,ROSUnicycleCoverageAgent, LoggingInfo
+import sys
+sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
 
-# Update the state into the Voronoi Handler internally, the data will be used to comput the Tesselations
-def updateAgentInfo(data):
-	centralCom.updateState(data)
-
+# These are logged by python Logging module, no ROS
+import logging
+logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
+logging.basicConfig(filename = logFileName, encoding='utf-8', level=logging.DEBUG)
 
 class aposn:
 	def __init__(self):
@@ -52,6 +55,33 @@ class aposn:
 
 
 apos = aposn() 
+
+def updateAgentInfo(data):
+	global cntRegisteredROSAgent, agentList, config, readyFlag
+
+	# Update all the subscribed topic from ROS
+	# SENSORS - State Feedback
+	# Obtain the new data from agents and assign into the controller lists
+	# Find the registered Agent ID and assign the values
+	isAssigned = False
+	for agent in agentList:
+		if ((agent.ID == -1) or (agent.ID == np.int32(data.packet.TransmitterID))):
+			# Assign new agent
+			if(agent.ID == -1):
+				cntRegisteredROSAgent += 1
+				# Update the state
+				agent.ID = np.int32(data.packet.TransmitterID)
+			
+			# Update the new pose
+			pose3 = np.array([np.float32(data.packet.AgentPosX), np.float32(data.packet.AgentPosY), np.float32(data.packet.AgentTheta)])
+			agent.updatePose(pose3, config.vConst, config.wOrbit)
+			# Check all agents are registered
+			isAssigned = True
+			break
+
+	if(isAssigned == False):
+		print("List is full ! New Agent detected")
+	
 
 def drawback():
 	rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
@@ -131,31 +161,51 @@ def drawback():
 # 		# ROS routine
 # 		rate.sleep()
 
+def fix_logging(level=logging.WARNING):
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    logging.getLogger('').addHandler(console)
+    formatter = logging.Formatter('%(levelname)-8s:%(name)-12s: %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
-import numpy as np
-from CentralizedControllerBase import CentralizedControllerBase
-from Agent import SimUnicycleCoverageAgent, LoggingInfo
-import logging
-import sys
-sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
 
-np.random.seed(6)
 
-def updateAgentInfo(data):
-	centralCom.updateState(data)
 
 class SimParam:
-    nAgent = 4
-    dt = 0.01
-    boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-    wOrbit = 0.5
-    vConst = 16
-    P = 3
-    EPS_SIGMOID = 5
-    Q_2x2 = 5 * np.identity(2)
-	
-if __name__ == '__main__':
+	nAgent = 4
+	SIM = 0
+	dt = 0.01
+	boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
+	wOrbit = 0.5
+	vConst = 16
+	P = 3
+	EPS_SIGMOID = 5
+	Q_2x2 = 5 * np.identity(2)
 
+# Initialize the simulation's parameters
+np.random.seed(6)
+config = SimParam()
+
+cntRegisteredROSAgent = 0
+
+agentList = []  
+for i in range(config.nAgent):
+	if(config.SIM):
+		rXY = 2000;    
+		pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
+		agent = SimUnicycleCoverageAgent(-1, config.dt, pose3)
+		agent.begin(1, 2, 1, 2, config.boundaries)
+		agentList.append(agent)
+		pass
+	else:
+		pose3 = np.float32(np.array([0.0, 0.0, 0.0]))
+		agent = ROSUnicycleCoverageAgent(-1, pose3)
+		agent.begin(1, 2, 1, 2, config.boundaries)
+		agentList.append(agent)
+com = CentralizedControllerBase(agentList, config.boundaries)
+
+if __name__ == '__main__':
 	# Declaration of ROS nodes
 	bridge = CvBridge()
 	rospy.init_node('stream_voronoi')
@@ -166,43 +216,46 @@ if __name__ == '__main__':
 	Info5 = rospy.Subscriber('/wu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-		
-	# These are logged by python Logging module, no ROS
-	name = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
-	logging.basicConfig(filename = name, encoding='utf-8', level=logging.DEBUG)
+	Publisher = rospy.Publisher('centralNode/controlInput', ControlMsg, queue_size = 1)	
 
-	# Initialize the simulation's parameters
-	config = SimParam()
-	agentList = []
-	rXY = 2000;      
-	nAgent = 4
-
-	for i in range(config.nAgent):
-		pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
-		agent = SimUnicycleCoverageAgent(i, config.dt, pose3)
-		agent.begin(1, 2, 1, 2, config.boundaries)
-		agentList.append(agent)
-
-	com = CentralizedControllerBase(agentList, config.boundaries)
+	# Reinitialize the logger	
+	logger = logging.getLogger('__name__')  
+	fh = logging.FileHandler(logFileName)  
+	logger.setLevel(logging.DEBUG)  
+	logger.addHandler(fh)  
 
 	while not rospy.is_shutdown():
-		# Get the pose from each agent's nodes
-		pntsArr = []
-		for i in range(config.nAgent):
-			_, vm2 = agentList[i].getPose()
-			pntsArr.append(vm2)
+		if(cntRegisteredROSAgent == config.nAgent or config.SIM):
+			# Get the pose from each agent's nodes
+			pntsArr = []
+			for i in range(config.nAgent):
+				_, vm2 = agentList[i].getPose()
+				pntsArr.append(vm2)
 
-		# Compute the centralized controller and update the actual states
-		totV, controlInput = com.updateCoverage(pntsArr)
-		print(totV)
-		
-		# Logging routines
-		str = "Logging \n"
-		for i in range(config.nAgent):
-			str += agentList[i].getLogStr()
-			str += "\n"	
-		logging.info(str)
+			# Compute the centralized controller and update the actual states
+			totV, controlInput = com.updateCoverage(pntsArr)
 
-		# Send the control output to each agent
-		for i in range(config.nAgent):
-			agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
+			# Logging routines
+			str = "Logging \n"
+			for i in range(config.nAgent):
+				str += agentList[i].getLogStr()
+				str += "\n"	
+			logger.info(str)
+			print(str)
+
+			# Send the control output to each agent
+			for i in range(config.nAgent):
+				if(config.SIM):
+					agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
+				else:
+					agentList[i].command(config.vConst, controlInput[i], Publisher)
+
+
+
+
+
+
+
+
+
+	

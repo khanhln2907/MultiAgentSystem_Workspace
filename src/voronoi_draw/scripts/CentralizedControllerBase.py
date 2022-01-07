@@ -38,39 +38,6 @@ class CentralizedControllerBase:
 			self.bndCoeff[j,2] = self.bVec[j]
 		print("Init list of %d agents", self._nAgent)
 	
-
-	# Update all the subscribed topic from ROS
-	# def updateState(self, data):
-	# 	# SENSORS - State Feedback
-	# 	# Obtain the new data from agents and assign into the controller lists
-	# 	# Find the registered Agent ID and assign the values
-	# 	isAssigned = False
-	# 	for agent in self._AgentList:
-	# 		if ((agent.ID == -1) or (agent.ID == np.int32(data.packet.TransmitterID))):
-	# 			# Assign new agent
-	# 			if(agent.ID == -1):
-	# 				self._cntRegisteredAgent += 1
-	# 			# Update the state
-	# 			agent.updateState(data)
-	# 			# Check all agents are registered
-	# 			isAssigned = True
-	# 			break
-
-	# 	if(isAssigned == False):
-	# 		#rospy.loginfo("List is full ! New Agent detected")
-	# 		print("List is full ! New Agent detected")
-		
-	# 	# CONTROL METHOD 
-	# 	# Start only all agents registered for the agentlist
-	# 	if(self._cntRegisteredAgent == self._nAgent):
-	# 		self.startFlag = True
-
-	# This method must be defined by the child class to provide the publishing methods to each agent
-	def publishControlMsg(self, ID, v,w):
-		#str = "Publish to agent %d, v = %.4f, w = %.4f" %(ID, v, w)
-		#print(str)
-		raise NotImplementedError()
-
 	# Compute Voronoi Tessellation for each agent
 	# Perform information routing to each control handle
 	# Mapping the partial derivative of the Lyapunov Feedback to each adjacent agent
