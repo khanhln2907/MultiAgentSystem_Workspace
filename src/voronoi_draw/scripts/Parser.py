@@ -66,7 +66,7 @@ for i in range(NAGENT):
     logHandles.append(h)
 
 logHandles = list(logHandles)
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641746963.log"  #LogSim1641577278 log
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641749748.log"  #LogSim1641577278 log
 REAL = 1
 
 a0 = TimeSeries()

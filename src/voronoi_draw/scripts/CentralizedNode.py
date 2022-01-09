@@ -130,7 +130,7 @@ class SimParam:
 	Q_2x2 = 1.0 * np.identity(2)
 	wOrbit = 20.0
 	wThres = 127.0
-	gain = 60.0
+	gain = 40.0
 	radius = 440.0
 
 
