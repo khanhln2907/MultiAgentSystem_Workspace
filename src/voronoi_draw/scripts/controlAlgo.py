@@ -12,7 +12,9 @@ def Voronoi2DCaldVdz(vorPrivateData, dCjdzi_Arr, boundaryCoeff, controlParameter
     sum_1_div_Hj = 0
     sum_aj_2HjSquared = np.array([0, 0])
     for j in range(numCoeff):
-        hj = (boundaryCoeff[j,2]- (boundaryCoeff[j,0]*zi [0] + boundaryCoeff[j,1]*zi [1])) 
+        hj = (boundaryCoeff[j,2]- (boundaryCoeff[j,0]*zi[0] + boundaryCoeff[j,1]*zi[1])) 
+        #print(boundaryCoeff[j], hj, zi)
+        assert(hj > 0)
         sum_1_div_Hj = sum_1_div_Hj + 1/hj
         sum_aj_2HjSquared = sum_aj_2HjSquared + np.array([boundaryCoeff[j,0], boundaryCoeff[j,1]]) / hj**2 / 2; 
     

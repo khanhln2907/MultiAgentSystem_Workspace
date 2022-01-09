@@ -1,6 +1,27 @@
 import numpy as np
 from Agent import LoggingInfo
 import matplotlib.pyplot as plt
+from voronoi_custom import *
+
+def drawback(pntsArr, ax):
+    pins = np.array(pntsArr)
+
+    bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
+    aMat, bVec = getConvexBndMatrix(bnd)
+    pnts,vorn,_,_ = voronoi(pins, aMat, bVec)
+    pntsv = [ [] for row in pnts]
+
+    for i, obj in enumerate(pnts):
+        pntsv[i] =  np.array(vorn[i])
+        if len(pntsv[i]) >= 3:
+            vorhull = ConvexHull(pntsv[i])		
+            for simplex in vorhull.simplices:
+                temp_1 = pntsv[i][simplex, 0]
+                temp_2 = pntsv[i][simplex, 1]
+                x = [temp_1.item(0), temp_1.item(1)]
+                y = [temp_2.item(0), temp_2.item(1)]
+                ax.plot(x, y, color = 'black', linewidth = 2)
+
 
 class TimeSeries: 
     def __init__(self):
@@ -45,7 +66,7 @@ for i in range(NAGENT):
     logHandles.append(h)
 
 logHandles = list(logHandles)
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641742999.log"  #LogSim1641577278 log
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641746963.log"  #LogSim1641577278 log
 REAL = 1
 
 a0 = TimeSeries()
@@ -79,22 +100,23 @@ for line in lines:
         else:          
             logHandles[id].addSample(id, tmp)
 
-sumV = 0
 for handle in logHandles:
     handle.toArray()
-    plt.plot(range(0, handle.cnt), handle.V)
-    sumV = sumV + handle.V
-plt.plot(range(0, handle.cnt), sumV)
 
+plt.figure(0)
 fig1, ax1 = plt.subplots()
 for handle in logHandles:
+    
     ax1.plot(handle.vm2[:,0], handle.vm2[:,1], 'o', color = 'green')
     ax1.plot(handle.pose3[:,0], handle.pose3[:,1], 'x', color = 'blue')
     ax1.plot(handle.CVT2[:,0], handle.CVT2[:,1], 'o', color='red')
 
-fig2, ax2 = plt.subplots()
+
+
+pntsArr = []
 for handle in logHandles:
-    ax2.plot(range(0, handle.cnt), handle.w)
+    pntsArr.append(handle.vm2[-1])
+drawback(pntsArr, ax1)
 
 for i in range(len(boundaries)):
     if i == len(boundaries) - 1:
@@ -107,7 +129,19 @@ for i in range(len(boundaries)):
 
 ax1.set_xlim([-1000, 4750])
 ax1.set_ylim([-1000, 3500])
-        
+
+plt.figure(1)
+fig2, (axW, axV) = plt.subplots(nrows = 2, ncols = 1)
+for handle in logHandles:
+    axW.plot(range(0, handle.cnt), handle.w)
+
+#axV = plt.subplot(2,1,2)
+sumV = 0
+for handle in logHandles:
+    axV.plot(range(0, handle.cnt), handle.V)
+    sumV = sumV + handle.V
+axV.plot(range(0, handle.cnt), sumV)
+
 plt.show()     
 
 

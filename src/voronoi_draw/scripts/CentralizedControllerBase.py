@@ -35,7 +35,7 @@ class CentralizedControllerBase:
 		for j in range(len(self.bVec)):
 			self.bndCoeff[j,0] = self.aMat[j,0]
 			self.bndCoeff[j,1] = self.aMat[j,1]
-			self.bndCoeff[j,2] = self.bVec[j]
+			self.bndCoeff[j,2] = -self.bVec[j]
 		print("Init list of %d agents", self._nAgent)
 		print(self.bndCoeff)
 	# Compute Voronoi Tessellation for each agent
@@ -45,7 +45,6 @@ class CentralizedControllerBase:
 	def updateCoverage(self, pnts2Arr):
 		# Get the centroids and the vertices
 		[pntsIn , self.VoronoiVertices, centroidArr, partitionMasses] = voronoi(pnts2Arr, self.aMat, self.bVec)
-		print(pnts2Arr)
 		[self.adjacentMat, commonverMat] = getAdjacentList(self.VoronoiVertices, centroidArr)
 
 		# Return the adjacent matrix in relation to the order of centroid

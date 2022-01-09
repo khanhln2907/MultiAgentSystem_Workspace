@@ -121,11 +121,11 @@ def drawback():
 
 class SimParam:
 	nAgent = 4
-	SIM = 1
-	dt = 0.001
+	SIM = 0
+	dt = 0.01
 	boundaries = np.array([[20.0,20.0], [20.0,2800.0], [4000.0,2800.0], [4000.0, 20.0]])
 	vConst = 16.0
-	P = 1
+	P = 1.0
 	EPS_SIGMOID = 2.0
 	Q_2x2 = 1.0 * np.identity(2)
 	wOrbit = 20.0
@@ -153,18 +153,19 @@ controlParam.wThres = config.wThres
 
 
 poseSim = [np.array([3924.21, 2331.41, 0.97]), \
-			np.array([963.49, 2594.09, 0.73]), \
+			np.array([963.49, 2194.09, 0.73]), \
 			np.array([1516.73, 145.00, 6.12]), \
 			np.array([3818.81, 132.36, 0.21])]
 for i in range(config.nAgent):
 	if(config.SIM):
-		config.vConst = 100.0
+		config.vConst = 20.0
 		config.wOrbit = 0.25
-
-		rXY = 2000;    
+		config.wThres = 1.5
+		config.gain = 0.8
 		agent = SimUnicycleCoverageAgent(i, config.dt, poseSim[i])
 		agent.begin(1, 2, 1, 2, config.boundaries)
 		agent.setParameter(controlParam)
+		agent.updateVM(80) # Uate the VM for the first time
 		agentList.append(agent)
 		pass
 	else:
