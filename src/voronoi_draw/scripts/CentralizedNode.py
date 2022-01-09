@@ -85,20 +85,28 @@ def updateAgentInfo(data):
 	
 
 def drawback():
-	rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
-	cv2.rectangle(rgb, (20, 20), (4000, 4000), (255,0,0), thickness=4)
-	pins = []
-	for i in range(0, centralCom._nAgent):
-		pins.append([centralCom._AgentList[i].VmX, centralCom._AgentList[i].VmY]) 
-	bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-	[pnts,vorn,centroidArr] = voronoi(pins,centralCom.aMat, centralCom.bVec)
+	bridge = CvBridge()
+	#rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
+	#cv2.rectangle(rgb, (20, 20), (4000, 4000), (255,0,0), thickness=4)
+	rgb = np.full((564,804,3), 255, dtype=np.uint8)
+	cv2.rectangle(rgb, (4, 4), (800, 560), (255,0,0), thickness=4)
+	pntsArr = []
+	# Create an array that contains all agents' position
+	for i in range(config.nAgent):
+		_, vm2 = agentList[i].getPose()
+		pntsArr.append(vm2)
+	
+	pins = np.array(pntsArr) / 5
+
+	bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]]) / 5
+	aMat, bVec = getConvexBndMatrix(bnd)
+	pnts,vorn,_,_ = voronoi(pins, aMat, bVec)
 	pntsv = [ [] for row in pnts]
 
 	for i, obj in enumerate(pnts):
 		pntsv[i] =  np.array(vorn[i])
 		if len(pntsv[i]) >= 3:
 			vorhull = ConvexHull(pntsv[i])		
-
 			for simplex in vorhull.simplices:
 				temp_1 = pntsv[i][simplex, 0]
 				temp_2 = pntsv[i][simplex, 1]
@@ -107,24 +115,23 @@ def drawback():
 				temp_y_1  = temp_2.item(0)
 				temp_y_2  = temp_2.item(1)
 				cv2.line(rgb, (int(temp_x_1), int(temp_y_1)), (int(temp_x_2), int(temp_y_2)), (255,0,0), thickness=4)
-	
 				rgb_addline = bridge.cv2_to_imgmsg(cv2.flip(rgb,1), 'rgb8')
 				dynamic_painting_pub.publish(rgb_addline)
 
 
 class SimParam:
 	nAgent = 4
-	SIM = 0
-	dt = 0.01
-	boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
+	SIM = 1
+	dt = 0.001
+	boundaries = np.array([[20.0,20.0], [20.0,2800.0], [4000.0,2800.0], [4000.0, 20.0]])
 	vConst = 16.0
 	P = 1
 	EPS_SIGMOID = 2.0
 	Q_2x2 = 1.0 * np.identity(2)
-	wOrbit = 20
-	wThres = 127
-	gain = 60
-	radius = 440
+	wOrbit = 20.0
+	wThres = 127.0
+	gain = 60.0
+	radius = 440.0
 
 
 # Initialize the simulation's parameters
@@ -144,11 +151,18 @@ controlParam.wOrbit = config.wOrbit
 controlParam.vConst = config.vConst
 controlParam.wThres = config.wThres
 
+
+poseSim = [np.array([3924.21, 2331.41, 0.97]), \
+			np.array([963.49, 2594.09, 0.73]), \
+			np.array([1516.73, 145.00, 6.12]), \
+			np.array([3818.81, 132.36, 0.21])]
 for i in range(config.nAgent):
 	if(config.SIM):
+		config.vConst = 100.0
+		config.wOrbit = 0.25
+
 		rXY = 2000;    
-		pose3 = np.array([rXY * np.random.rand(), rXY * np.random.rand(), np.random.rand()])
-		agent = SimUnicycleCoverageAgent(i, config.dt, pose3)
+		agent = SimUnicycleCoverageAgent(i, config.dt, poseSim[i])
 		agent.begin(1, 2, 1, 2, config.boundaries)
 		agent.setParameter(controlParam)
 		agentList.append(agent)
@@ -165,7 +179,7 @@ if __name__ == '__main__':
 	# Declaration of ROS nodes
 	bridge = CvBridge()
 	rospy.init_node('stream_voronoi')
-	rate = rospy.Rate(1000)
+	rate = rospy.Rate(500)
 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
 
 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
@@ -180,6 +194,8 @@ if __name__ == '__main__':
 	logger.setLevel(logging.DEBUG)  
 	logger.addHandler(fh)  
 
+	drawbackCnt = 0
+	SCALE = 2000
 	while not rospy.is_shutdown():
 		if(cntRegisteredROSAgent == config.nAgent or config.SIM):
 			# Get the pose from each agent's nodes
@@ -207,6 +223,12 @@ if __name__ == '__main__':
 				else:
 					#agentList[i].command(16.0, 20, Publisher)
 					agentList[i].command(config.vConst, controlInput[i], Publisher)
+
+			drawbackCnt = +1
+			if(drawbackCnt % SCALE):
+
+				#drawback()
+				pass
 
 		if(not config.SIM):
 			rate.sleep()

@@ -12,6 +12,7 @@ class TimeSeries:
         self.vm2 = []
         self.CVT2 = []
         self.V = 0
+        self.w = 0
         pass
 
     def addSample(self, id, sample):
@@ -25,12 +26,14 @@ class TimeSeries:
         self.vm2 = np.zeros((self.cnt, 2))
         self.CVT2 = np.zeros((self.cnt, 2))
         self.V = np.ndarray((self.cnt,), float)
+        self.w = np.ndarray((self.cnt,), float)
         for i in range(self.cnt):
             self.time[i] = self.samples[i].Timestamp
             self.pose3[i,:] = self.samples[i].pose3
             self.vm2[i,:] = self.samples[i].vm2
             self.V[i] = self.samples[i].Vi
             self.CVT2[i,:] = self.samples[i].CVT2
+            self.w[i] = self.samples[i].w
 
 NAGENT = 4
 
@@ -42,7 +45,7 @@ for i in range(NAGENT):
     logHandles.append(h)
 
 logHandles = list(logHandles)
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641577278.log" 
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641742999.log"  #LogSim1641577278 log
 REAL = 1
 
 a0 = TimeSeries()
@@ -88,8 +91,22 @@ for handle in logHandles:
     ax1.plot(handle.vm2[:,0], handle.vm2[:,1], 'o', color = 'green')
     ax1.plot(handle.pose3[:,0], handle.pose3[:,1], 'x', color = 'blue')
     ax1.plot(handle.CVT2[:,0], handle.CVT2[:,1], 'o', color='red')
-ax1.set_xlim([20, 4000])
-ax1.set_ylim([20, 2800])
+
+fig2, ax2 = plt.subplots()
+for handle in logHandles:
+    ax2.plot(range(0, handle.cnt), handle.w)
+
+for i in range(len(boundaries)):
+    if i == len(boundaries) - 1:
+        next_id = 0
+    else:
+        next_id = i + 1
+    x = [boundaries[i][0], boundaries[next_id][0]]
+    y = [boundaries[i][1], boundaries[next_id][1]]
+    ax1.plot(x, y, color = 'black', linewidth = 2)
+
+ax1.set_xlim([-1000, 4750])
+ax1.set_ylim([-1000, 3500])
         
 plt.show()     
 

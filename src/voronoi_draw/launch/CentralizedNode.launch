@@ -15,7 +15,7 @@
   
   <node name="image_view_1" pkg="image_view" type="video_recorder" respawn="false">
     <remap from="image" to="/img/paint"/>
-    <param name="filename" value="$(find voronoi_draw)/voronoi.avi" />
+    <!-- <param name="filename" value="$(find voronoi_draw)/voronoi.avi" /> /-->
     <param name="fps" type="int" value="18" />
   </node>
 
