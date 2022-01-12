@@ -3,7 +3,7 @@ import math
 from voronoi_custom import getConvexBndMatrix 
 from controlAlgo import *
 import time
-from tip.msg import ControlMsg
+#from tip.msg import ControlMsg
 
 class LoggingInfo:
     ID = 0
