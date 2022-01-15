@@ -2,30 +2,7 @@ import math
 import numpy as np
 import scipy.integrate as integrate
 
-class grad_2d:
-    dx_dx = 0
-    dx_dy = 0 
-    dy_dx = 0 
-    dy_dy = 0
 
-    def __init__(self, mat2x2):
-        self.dx_dx = mat2x2[0,0]
-        self.dx_dy = mat2x2[0,1]
-        self.dy_dx = mat2x2[1,0]
-        self.dy_dy = mat2x2[1,1]
-        pass
-
-   
-    def npForm(self):
-        return np.array([[self.dx_dx, self.dx_dy],
-                        [self.dy_dx, self.dy_dy]])
-
-    def __call__(self):
-        return np.array([[self.dx_dx, self.dx_dy],
-                        [self.dy_dx, self.dy_dy]])
-
-    def show(self):
-        print("dCx_dzx", self.dx_dx, "dCx_dzy", self.dx_dy, "dCy_dzx", self.dy_dx, "dCy_dzy", self.dy_dy)
 
 def dq__dZix_n_func(qX, ziX, dZiZj):
     return (qX - ziX) / dZiZj
@@ -71,10 +48,9 @@ def dCix_dzjy_func(t, v1x, v2x, v1y, v2y, zjy, dZiZj, dqTodtParam):
 def dCiy_dzjy_func(t, v1y, v2y, zjy, dZiZj, dqTodtParam):
     return YtoT_func(t,v1y,v2y) * dq__dZjy_n_func(YtoT_func(t,v1y,v2y), zjy, dZiZj) * dqTodtParam
 
-def Voronoi2D_calCVTPartialDerivative(thisCoord_2d, thisCVT_2d, mVi, adjCoord_2d, vertex1_2d, vertex2_2d):
+def Voronoi2DCalCVTPartialDerivative(thisCoord_2d, thisCVT_2d, mVi, adjCoord_2d, vertex1_2d, vertex2_2d):
     # Function definition for partial derivative
     distanceZiZj = math.sqrt((thisCoord_2d[0] - adjCoord_2d[0])**2 + (thisCoord_2d[1] - adjCoord_2d[1])**2)
-   
     # Factorization of dq = param * dt for line integration
     v1x = vertex1_2d[0]
     v2x = vertex2_2d[0]

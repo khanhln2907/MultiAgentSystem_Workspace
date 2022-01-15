@@ -1,9 +1,7 @@
 #!/usr/bin/python
 import numpy as np
 import random, itertools, collections
-import rospy
 import math
-
 
 from scipy.spatial import Delaunay
 from scipy.spatial import ConvexHull
@@ -173,8 +171,9 @@ def getAdjacentList(Vertices, centroidArr):
 			elif (cnt == 0):
 				pass
 			else:
-				rospy.logwarn("adjacentList Fault: id: %d vs %d: %d", thisAgent, nextAgent, cnt)
-				rospy.logwarn(Vertices)
+				str = "adjacentList Fault: id: %d vs %d: %d" % (thisAgent, nextAgent, cnt)
+				print(str)
+				#print(Vertices)
 				
 	return adjMat, vArr
 
