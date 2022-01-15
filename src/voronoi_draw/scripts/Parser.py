@@ -56,24 +56,19 @@ class TimeSeries:
             self.CVT2[i,:] = self.samples[i].CVT2
             self.w[i] = self.samples[i].w
 
-NAGENT = 4
 
 boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
-logHandles = []
 
+NAGENT = 6
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1642258433.log"  #LogSim1641577278 log
+REAL = 1
+
+logHandles = []
 for i in range(NAGENT):
     h = TimeSeries()
     logHandles.append(h)
 
 logHandles = list(logHandles)
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641749748.log"  #LogSim1641577278 log
-REAL = 1
-
-a0 = TimeSeries()
-a1 = TimeSeries()
-a2 = TimeSeries()
-a3 = TimeSeries()
-
 
 with open(file) as f:
     lines = f.readlines() # list containing lines of file
@@ -87,16 +82,18 @@ for line in lines:
         tmp.parse(line)
         id = tmp.ID
         if(REAL):
-            if(id == 20003):
-                logHandles[0].addSample(id, tmp)
-            elif(id == 20005):
-                logHandles[1].addSample(id, tmp)
-            elif(id == 20006):
-                logHandles[2].addSample(id, tmp)
-            elif(id == 20007):
-                logHandles[3].addSample(id, tmp)
-            else:
-                print("UNDEFINED PAGENT ID", id)
+            logHandles[(id % 20000) -1].addSample(id, tmp)
+
+            # if(id == 20001):
+            #     logHandles[0].addSample(id, tmp)
+            # elif(id == 20005):
+            #     logHandles[1].addSample(id, tmp)
+            # elif(id == 20006):
+            #     logHandles[2].addSample(id, tmp)
+            # elif(id == 20007):
+            #     logHandles[3].addSample(id, tmp)
+            # else:
+            #     print("UNDEFINED PAGENT ID", id)
         else:          
             logHandles[id].addSample(id, tmp)
 
@@ -111,6 +108,7 @@ for handle in logHandles:
     ax1.plot(handle.pose3[:,0], handle.pose3[:,1], 'x', color = 'blue')
     ax1.plot(handle.CVT2[:,0], handle.CVT2[:,1], 'o', color='red')
 
+ax1.axis("equal")
 
 
 pntsArr = []

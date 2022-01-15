@@ -36,8 +36,7 @@ class CentralizedControllerBase:
 			self.bndCoeff[j,0] = self.aMat[j,0]
 			self.bndCoeff[j,1] = self.aMat[j,1]
 			self.bndCoeff[j,2] = -self.bVec[j]
-		print("Init list of %d agents", self._nAgent)
-		print(self.bndCoeff)
+		print("Init list of {} agents".format(self._nAgent))
 	# Compute Voronoi Tessellation for each agent
 	# Perform information routing to each control handle
 	# Mapping the partial derivative of the Lyapunov Feedback to each adjacent agent

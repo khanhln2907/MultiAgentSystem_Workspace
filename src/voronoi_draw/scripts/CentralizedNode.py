@@ -84,43 +84,8 @@ def updateAgentInfo(data):
 		print("List is full ! New Agent detected")
 	
 
-def drawback():
-	bridge = CvBridge()
-	#rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
-	#cv2.rectangle(rgb, (20, 20), (4000, 4000), (255,0,0), thickness=4)
-	rgb = np.full((564,804,3), 255, dtype=np.uint8)
-	cv2.rectangle(rgb, (4, 4), (800, 560), (255,0,0), thickness=4)
-	pntsArr = []
-	# Create an array that contains all agents' position
-	for i in range(config.nAgent):
-		_, vm2 = agentList[i].getPose()
-		pntsArr.append(vm2)
-	
-	pins = np.array(pntsArr) / 5
-
-	bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]]) / 5
-	aMat, bVec = getConvexBndMatrix(bnd)
-	pnts,vorn,_,_ = voronoi(pins, aMat, bVec)
-	pntsv = [ [] for row in pnts]
-
-	for i, obj in enumerate(pnts):
-		pntsv[i] =  np.array(vorn[i])
-		if len(pntsv[i]) >= 3:
-			vorhull = ConvexHull(pntsv[i])		
-			for simplex in vorhull.simplices:
-				temp_1 = pntsv[i][simplex, 0]
-				temp_2 = pntsv[i][simplex, 1]
-				temp_x_1  = temp_1.item(0)
-				temp_x_2  = temp_1.item(1)
-				temp_y_1  = temp_2.item(0)
-				temp_y_2  = temp_2.item(1)
-				cv2.line(rgb, (int(temp_x_1), int(temp_y_1)), (int(temp_x_2), int(temp_y_2)), (255,0,0), thickness=4)
-				rgb_addline = bridge.cv2_to_imgmsg(cv2.flip(rgb,1), 'rgb8')
-				dynamic_painting_pub.publish(rgb_addline)
-
-
 class SimParam:
-	nAgent = 4
+	nAgent = 6
 	SIM = 0
 	dt = 0.01
 	boundaries = np.array([[20.0,20.0], [20.0,2800.0], [4000.0,2800.0], [4000.0, 20.0]])
@@ -128,10 +93,10 @@ class SimParam:
 	P = 1.0
 	EPS_SIGMOID = 2.0
 	Q_2x2 = 1.0 * np.identity(2)
-	wOrbit = 20.0
 	wThres = 127.0
 	gain = 40.0
-	radius = 440.0
+	wOrbit = 40.0
+	radius = 200.0
 
 
 # Initialize the simulation's parameters
@@ -183,10 +148,12 @@ if __name__ == '__main__':
 	rate = rospy.Rate(500)
 	dynamic_painting_pub = rospy.Publisher('/img/paint', Image, queue_size=1)
 
+	Info1 = rospy.Subscriber('/yi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+	Info2 = rospy.Subscriber('/er/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info3 = rospy.Subscriber('/san/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
+	Info4 = rospy.Subscriber('/xi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info5 = rospy.Subscriber('/wu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Info6 = rospy.Subscriber('/liu/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
-	Info7 = rospy.Subscriber('/qi/CoverageInfo', UnicycleInfoMsg, updateAgentInfo)
 	Publisher = rospy.Publisher('centralNode/controlInput', ControlMsg, queue_size = 1)	
 
 	# Reinitialize the logger	
@@ -223,6 +190,7 @@ if __name__ == '__main__':
 					agentList[i].move(config.vConst, controlInput[i], config.wOrbit)
 				else:
 					#agentList[i].command(16.0, 20, Publisher)
+					# controlInput[i] = 40
 					agentList[i].command(config.vConst, controlInput[i], Publisher)
 
 			drawbackCnt = +1
@@ -230,6 +198,9 @@ if __name__ == '__main__':
 
 				#drawback()
 				pass
+		else:
+			print("Waiting for all agents ")
+			#time.sleep(0.1)
 
 		if(not config.SIM):
 			rate.sleep()

@@ -37,82 +37,55 @@
   </node>
 
 
-  <node name="tip_san" pkg="tip" type="AgentNode" respawn="false" output="screen">
+  <node name="tip_yi" pkg="tip" type="AgentNode" respawn="false" output="screen">
     <remap from="/qualisys/Center" to="/qualisys/vone"/>
-    <remap from="/vehicle/vt_ctr" to="/san/vt_ctr" />
-    <remap from="/vehicle/centroid" to="/san/centroid" />
-    <remap from="/vehicle/event" to="/san/event" />
-    <remap from="/jet1/vt_ctr" to="/liu/vt_ctr" />
-    <remap from="/jet2/vt_ctr" to="/qi/vt_ctr" />
-    <remap from="/jet3/vt_ctr" to="/wu/vt_ctr" />
-    <remap from="/vehicle/voronoi" to="/san/voronoi" />
-    
-    <remap from="/jet1/CoverageInfo" to="/liu/CoverageInfo" />
-    <remap from="/jet2/CoverageInfo" to="/qi/CoverageInfo" />
-    <remap from="/jet3/CoverageInfo" to="/wu/CoverageInfo" />
-    <remap from="/vehicle/CoverageInfo" to="/san/CoverageInfo" />
+    <remap from="/vehicle/CoverageInfo" to="/yi/CoverageInfo" />
 
-    <param name="port_param" type="int" value="20003" />
+    <param name="port_param" type="int" value="20001" />
     <param name="ip_param" value="192.168.137.174" />
   </node >
 
 
-  <node name="tip_wu" pkg="tip" type="AgentNode" respawn="false" output="screen">
+  <node name="tip_er" pkg="tip" type="AgentNode" respawn="false" output="screen">
     <remap from="/qualisys/Center" to="/qualisys/vtwo"/>
-    <remap from="/vehicle/vt_ctr" to="/wu/vt_ctr" />
-    <remap from="/vehicle/centroid" to="/wu/centroid" />
-    <remap from="/vehicle/event" to="/wu/event" />
-    <remap from="/jet1/vt_ctr" to="/liu/vt_ctr" />
-    <remap from="/jet2/vt_ctr" to="/qi/vt_ctr" />
-    <remap from="/jet3/vt_ctr" to="/san/vt_ctr" />
-    <remap from="/vehicle/voronoi" to="/wu/voronoi" />
+    <remap from="/vehicle/CoverageInfo" to="/er/CoverageInfo" />
 
-    <remap from="/jet1/CoverageInfo" to="/liu/CoverageInfo" />
-    <remap from="/jet2/CoverageInfo" to="/qi/CoverageInfo" />
-    <remap from="/jet3/CoverageInfo" to="/san/CoverageInfo" />
-    <remap from="/vehicle/CoverageInfo" to="/wu/CoverageInfo" />
-
-    <param name="port_param" type="int" value="20005" />
+    <param name="port_param" type="int" value="20002" />
     <param name="ip_param" value="192.168.137.251" />
   </node>
 
-  <node name="tip_liu" pkg="tip" type="AgentNode" respawn="false" output="screen">
+  <node name="tip_san" pkg="tip" type="AgentNode" respawn="false" output="screen">
     <remap from="/qualisys/Center" to="/qualisys/vthree"/>
-    <remap from="/vehicle/vt_ctr" to="/liu/vt_ctr" />
-    <remap from="/vehicle/centroid" to="/liu/centroid" />
-    <remap from="/vehicle/event" to="/liu/event" />
-    <remap from="/jet3/vt_ctr" to="/qi/vt_ctr" />
-    <remap from="/jet2/vt_ctr" to="/wu/vt_ctr" />
-    <remap from="/jet1/vt_ctr" to="/san/vt_ctr" />
-    <remap from="/vehicle/voronoi" to="/liu/voronoi" />
+    <remap from="/vehicle/CoverageInfo" to="/san/CoverageInfo" />
 
-    <remap from="/vehicle/CoverageInfo" to="/liu/CoverageInfo" />
-    <remap from="/jet3/CoverageInfo" to="/qi/CoverageInfo" />
-    <remap from="/jet2/CoverageInfo" to="/wu/CoverageInfo" />
-    <remap from="/jet1/CoverageInfo" to="/san/CoverageInfo" />
-
-    <param name="port_param" type="int" value="20006" />
+    <param name="port_param" type="int" value="20003" />
     <param name="ip_param" value="192.168.137.149" />
   </node>
 
-  <node name="tip_qi" pkg="tip" type="AgentNode" respawn="false" output="screen">
+  <node name="tip_xi" pkg="tip" type="AgentNode" respawn="false" output="screen">
     <remap from="/qualisys/Center" to="/qualisys/vfour"/>
-    <remap from="/vehicle/vt_ctr" to="/qi/vt_ctr" />
-    <remap from="/vehicle/centroid" to="/qi/centroid" />
-    <remap from="/vehicle/event" to="/qi/event" />
-    <remap from="/jet1/vt_ctr" to="/liu/vt_ctr" />
-    <remap from="/jet2/vt_ctr" to="/wu/vt_ctr" />
-    <remap from="/jet3/vt_ctr" to="/san/vt_ctr" />
-    <remap from="/vehicle/voronoi" to="/qi/voronoi" />
+    <remap from="/vehicle/CoverageInfo" to="/xi/CoverageInfo" />
 
-    <remap from="/jet1/CoverageInfo" to="/liu/CoverageInfo" />
-    <remap from="/jet2/CoverageInfo" to="/wu/CoverageInfo" />
-    <remap from="/jet3/CoverageInfo" to="/san/CoverageInfo" />
-    <remap from="/vehicle/CoverageInfo" to="/qi/CoverageInfo" />
-
-    <param name="port_param" type="int" value="20007" />
+    <param name="port_param" type="int" value="20004" />
     <param name="ip_param" value="192.168.137.117" />
   </node>
+
+<node name="tip_wu" pkg="tip" type="AgentNode" respawn="false" output="screen">
+    <remap from="/qualisys/Center" to="/qualisys/vfive"/>
+    <remap from="/vehicle/CoverageInfo" to="/wu/CoverageInfo" />
+
+    <param name="port_param" type="int" value="20005" />
+    <param name="ip_param" value="192.168.137.101" />
+</node>
+
+<node name="tip_liu" pkg="tip" type="AgentNode" respawn="false" output="screen">
+    <remap from="/qualisys/Center" to="/qualisys/veight"/>
+    <remap from="/vehicle/CoverageInfo" to="/liu/CoverageInfo" />
+
+    <param name="port_param" type="int" value="20006" />
+    <param name="ip_param" value="192.168.137.203" />
+  </node>
+
 
   <node name="turtle_teleop_key" pkg="turtlesim" type="turtle_teleop_key">
   </node>

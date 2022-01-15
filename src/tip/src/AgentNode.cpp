@@ -102,9 +102,9 @@ int main(int argc, char **argv) {
     // Setup subscribing routine
     ros::Subscriber infoQualisys = qualisysListener.subscribe("/qualisys/Center", 1000, rosTopicQualisysListen);
     // Subscribe to the General Info of the neighbor agents
-    ros::Subscriber infoAgent1 = agentListerner1.subscribe("/jet1/CoverageInfo", 1000, rosTopicCoverageListen);
-    ros::Subscriber infoAgent2 = agentListerner2.subscribe("/jet2/CoverageInfo", 1000, rosTopicCoverageListen);
-    ros::Subscriber infoAgent3 = agentListerner3.subscribe("/jet3/CoverageInfo", 1000, rosTopicCoverageListen);
+    // ros::Subscriber infoAgent1 = agentListerner1.subscribe("/jet1/CoverageInfo", 1000, rosTopicCoverageListen);
+    // ros::Subscriber infoAgent2 = agentListerner2.subscribe("/jet2/CoverageInfo", 1000, rosTopicCoverageListen);
+    // ros::Subscriber infoAgent3 = agentListerner3.subscribe("/jet3/CoverageInfo", 1000, rosTopicCoverageListen);
 
 // Subscribe to the centralized controller
     ros::Subscriber cmdCentralNode = centralizeNodeListener.subscribe("/centralNode/controlInput", 5000, rosTopicCentralizedNodeListen);
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 
     /// ALGORITHM / CONTROLLER SETUP **************************************************
     // Initialize the agent with a fix ID (use the port_paramter as uniqueID)
-#define TOTAL_AGENT 4
+#define TOTAL_AGENT 6
 #define MAX_HEADING_VEL 10
 #define MAX_ANGULAR_VEL 2
 #define CONST_HEADING_VEL 16
@@ -323,7 +323,7 @@ void rosTopicQualisysListen(const qualisys::Subject& center){
 
     // Update the new pose to agent, which is used to compute the virtual center internally
     UnicycleState newPose;
-    newPose.x = (float) center.position.x * 1000; // Convert to cm  
+    newPose.x = (float) center.position.x * 1000; // Convert to mm  
     newPose.y = (float) center.position.y * 1000;
     newPose.theta = (float) theta;
     thisAgent.updateState(newPose);
