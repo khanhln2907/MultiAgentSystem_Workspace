@@ -39,7 +39,9 @@ sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
 # These are logged by python Logging module, no ROS
 import logging
 from CoverageInterfaces import *
-logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
+#logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
+logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/TRO_LogSim%d.log" %(3)
+
 logging.basicConfig(filename = logFileName, encoding='utf-8', level=logging.DEBUG)
 
 class aposn:
@@ -57,39 +59,6 @@ class aposn:
 
 apos = aposn() 
 
-<<<<<<< HEAD
-def drawback():
-	bridge = CvBridge()
-	#rgb = np.full((2820,4020,3), 255, dtype=np.uint8)
-	#cv2.rectangle(rgb, (20, 20), (4000, 4000), (255,0,0), thickness=4)
-	rgb = np.full((564,804,3), 255, dtype=np.uint8)
-	cv2.rectangle(rgb, (4, 4), (800, 560), (255,0,0), thickness=4)
-	vmList = []
-	# Create an array that contains all agents' position
-	for i in range(0, centralCom._nAgent):
-		vmList.append([centralCom._AgentList[i].VmX, centralCom._AgentList[i].VmY]) 
-	pins = np.array(vmList) / 5
-
-	bnd = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]]) / 5
-	aMat, bVec = getConvexBndMatrix(bnd)
-	pnts,vorn,_,_ = voronoi(pins, aMat, bVec)
-	pntsv = [ [] for row in pnts]
-
-	for i, obj in enumerate(pnts):
-		pntsv[i] =  np.array(vorn[i])
-		if len(pntsv[i]) >= 3:
-			vorhull = ConvexHull(pntsv[i])		
-			for simplex in vorhull.simplices:
-				temp_1 = pntsv[i][simplex, 0]
-				temp_2 = pntsv[i][simplex, 1]
-				temp_x_1  = temp_1.item(0)
-				temp_x_2  = temp_1.item(1)
-				temp_y_1  = temp_2.item(0)
-				temp_y_2  = temp_2.item(1)
-				cv2.line(rgb, (int(temp_x_1), int(temp_y_1)), (int(temp_x_2), int(temp_y_2)), (255,0,0), thickness=4)
-				rgb_addline = bridge.cv2_to_imgmsg(cv2.flip(rgb,1), 'rgb8')
-				dynamic_painting_pub.publish(rgb_addline)
-=======
 def updateAgentInfo(data):
 	global cntRegisteredROSAgent, agentList, config, readyFlag
 
@@ -112,7 +81,6 @@ def updateAgentInfo(data):
 			# Check all agents are registered
 			isAssigned = True
 			break
->>>>>>> test6Agent
 
 	if(isAssigned == False):
 		print("List is full ! New Agent detected")
@@ -210,31 +178,6 @@ if __name__ == '__main__':
 			totV, controlInput = com.updateCoverage(pntsArr)
 			print(totV)
 
-<<<<<<< HEAD
-			# Print with low frequency for debugging
-			if((time.time() - centralCom.lastPrintTime) * 1000 > 50):
-				sumV = 0
-				for agent in centralCom._AgentList:
-					sumV += agent.lastVBLF
-				str = "\n"
-				str += "Execute control. Time %f [s]. Sum VBLF> %.4f \nReport: \n" %(toc, sumV)
-				
-				for agent in centralCom._AgentList:	
-					str += "%d -> P[%4.1f %4.1f %1.1f] VM[%4.4f %4.4f] C[%4.4f %4.4f] Vel[%3.2f %2.2f] V: %.3f dV: [%.4f %.4f] Err: %.2f \n"\
-					%(agent.ID, agent.PosX, agent.PosY, agent.Theta, \
-					agent.VmX, agent.VmY,\
-					agent.TargetX, agent.TargetY,\
-					agent.angularVel, agent.testW,\
-					agent.lastVBLF, agent.dVBLF[0], agent.dVBLF[1], \
-					math.sqrt(pow(agent.VmX - agent.TargetX,2) + pow(agent.VmY - agent.TargetY,2)))						
-				rospy.loginfo(str)
-				rospy.loginfo(centralCom.adjacentMat)
-				centralCom.lastPrintTime = time.time()
-
-				drawback()
-		# ROS routine
-		rate.sleep()
-=======
 			# Logging routines
 			str = "Logging \n"
 			for i in range(config.nAgent):
@@ -272,4 +215,3 @@ if __name__ == '__main__':
 
 
 	
->>>>>>> test6Agent

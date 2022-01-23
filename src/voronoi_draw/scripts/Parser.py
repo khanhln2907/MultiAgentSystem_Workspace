@@ -60,7 +60,7 @@ class TimeSeries:
 boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
 
 NAGENT = 6
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1642258433.log"  #LogSim1641577278 log
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "TRO_LogSim3.log"  #LogSim1641577278 log
 REAL = 1
 
 logHandles = []
@@ -139,6 +139,16 @@ for handle in logHandles:
     axV.plot(range(0, handle.cnt), handle.V)
     sumV = sumV + handle.V
 axV.plot(range(0, handle.cnt), sumV)
+
+plt.figure(0)
+fig1, ax1 = plt.subplots()
+for handle in logHandles:
+    
+    ax1.plot(handle.vm2[-1,0], handle.vm2[-1,1], 'o', color = 'green')
+    ax1.plot(handle.pose3[-1,0], handle.pose3[-1,1], 'x', color = 'blue')
+    ax1.plot(handle.CVT2[-1,0], handle.CVT2[-1,1], 'o', color='red')
+
+ax1.axis("equal")
 
 plt.show()     
 
