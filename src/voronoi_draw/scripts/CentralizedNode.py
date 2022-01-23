@@ -40,7 +40,7 @@ sys.path.append('/home/qingchen/catkin_ws/src/voronoi_draw')
 import logging
 from CoverageInterfaces import *
 #logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/LogSim%d.log" %(time.time())
-logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/TRO_LogSim%d.log" %(3)
+logFileName = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/" + "Logging/TRO_LogSim%d.log" %(5)
 
 logging.basicConfig(filename = logFileName, encoding='utf-8', level=logging.DEBUG)
 

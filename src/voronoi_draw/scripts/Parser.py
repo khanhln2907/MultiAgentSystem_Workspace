@@ -60,7 +60,7 @@ class TimeSeries:
 boundaries = np.array([[20,20], [20,2800], [4000,2800], [4000, 20]])
 
 NAGENT = 6
-file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "TRO_LogSim3.log"  #LogSim1641577278 log
+file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "TRO_LogSim4.log"  #LogSim1641577278 log
 REAL = 1
 
 logHandles = []
