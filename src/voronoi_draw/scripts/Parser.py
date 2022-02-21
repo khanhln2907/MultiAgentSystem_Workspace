@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from voronoi_custom import *
 import matplotlib.animation as anim
 from time import *
+import os
 
 def drawback(pntsArr, ax):
     pins = np.array(pntsArr)
@@ -69,9 +70,11 @@ for i in range(NAGENT):
 
 logHandles = list(logHandles)
 #file = "/home/qingchen/catkin_ws/src/voronoi_draw/scripts/Logging/" + "LogSim1641749748.log"  #LogSim1641577278 log
-file = "Logging\\" + "LogSim1641749508.log"  #LogSim1641577278 log
+file = os.getcwd()
+file = os.path.join(file, "voronoi_draw\scripts\Logging\LogSim1641749508.log")
+#file = "Logging\\" + "LogSim1641749508.log"  #LogSim1641577278 log
 REAL = 1
-VIS = False
+VIS = True
 
 
 a0 = TimeSeries()
